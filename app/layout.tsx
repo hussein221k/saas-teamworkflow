@@ -7,6 +7,7 @@ import { queryClient } from "@/lib/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { ThemeProvider } from "@/components/theme-provider";
 import { AuthProvider } from "./AuthProvider";
+import { TooltipProvider } from "@/components/ui/tooltip";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -33,6 +34,17 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              if ('${process.env.NODE_ENV}' === 'production') {
+                console.log = () => {};
+                console.error = () => {};
+                console.warn = () => {};
+              }
+            `,
+          }}
+        />
         <AuthProvider>
           <QueryClientProvider client={queryClient}>
             <ThemeProvider
@@ -41,7 +53,7 @@ export default function RootLayout({
               enableSystem
               disableTransitionOnChange
             >
-              {children}
+              <TooltipProvider>{children}</TooltipProvider>
               <ReactQueryDevtools initialIsOpen={false} />
             </ThemeProvider>
           </QueryClientProvider>

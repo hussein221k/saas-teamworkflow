@@ -7,9 +7,9 @@ import { cn } from '@/lib/utils'
 import UserAuth from './userAuth'
 
 const menuItems = [
-    { name: 'Dashboard', href: 'dashboard' },
-    { name: 'Pricing', href: 'billing' },
-    { name: 'About', href: 'about' },
+    { name: 'Dashboard', href: '/dashboard' },
+    { name: 'Pricing', href: '/billing' },
+    { name: 'About', href: '/about' },
 ]
 
 export const HeroHeader = () => {

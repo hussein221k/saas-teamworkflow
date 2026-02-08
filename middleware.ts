@@ -5,7 +5,7 @@ export default withAuth(
   },
   {
     // Middleware still runs on all routes, but doesn't protect the home route
-    publicPaths: ["/"], // e.g. ["/api/public", "/blog", "/about"]
+    publicPaths: ["/", "/billing", "/about", "/contact", "/employee/login"], // Make landing pages public
   }
 );
 

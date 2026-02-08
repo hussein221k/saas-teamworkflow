@@ -1,6 +1,5 @@
 generator client {
-  provider = "prisma-client"
-  output   = "../app/generated/prisma"
+  provider = "prisma-client-js"
 }
 
 datasource db {
@@ -43,18 +42,20 @@ enum BillingStatus {
 model User {
   id       Int    @id @default(autoincrement())
   name     String
-  email    String @unique
+  email    String? @unique
+  username String? @unique
+  employeeCode String? @unique
   password String
   role     Role   @default(EMPLOYEE)
 
-  teamId Int
+  teamId Int?
   createdById Int?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   // 🔹 Team membership
-  team Team @relation("TeamMembers", fields: [teamId], references: [id])
+  team Team? @relation("TeamMembers", fields: [teamId], references: [id])
 
   // 🔹 Team ownership (Admin)
   ownedTeams Team[] @relation("TeamOwner")
@@ -69,6 +70,7 @@ model User {
 
   // 🔹 Comments
   comments Comment[]
+  messages Message[]
 }
 
 // ==============================
@@ -87,8 +89,33 @@ model Team {
   // 🔹 Members
   users User[] @relation("TeamMembers")
 
-  tasks   Task[]
-  billing Billing?
+  tasks    Task[]
+  messages Message[]
+  channels Channel[]
+  projects Project[]
+  billing  Billing?
+  themeColor String @default("#6366f1")
+  inviteCode String? @unique
+}
+
+model Project {
+  id        Int      @id @default(autoincrement())
+  name      String
+  teamId    Int
+  createdAt DateTime @default(now())
+
+  team      Team     @relation(fields: [teamId], references: [id])
+}
+
+
+model Channel {
+  id        Int      @id @default(autoincrement())
+  name      String
+  teamId    Int
+  createdAt DateTime @default(now())
+
+  team     Team      @relation(fields: [teamId], references: [id])
+  messages Message[]
 }
 
 // ==============================
@@ -148,4 +175,23 @@ model Comment {
 
   task Task @relation(fields: [taskId], references: [id])
   user User @relation(fields: [userId], references: [id])
+}
+
+// ==============================
+// Message (Team Chat)
+// ==============================
+
+model Message {
+  id        Int      @id @default(autoincrement())
+  content   String
+
+  channelId Int?
+  teamId    Int
+  userId    Int
+
+  createdAt DateTime @default(now())
+
+  channel Channel? @relation(fields: [channelId], references: [id])
+  team    Team    @relation(fields: [teamId], references: [id])
+  user    User    @relation(fields: [userId], references: [id])
 }

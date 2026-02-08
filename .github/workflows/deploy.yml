@@ -1,0 +1,48 @@
+name: UNIT-01 Tactical Deployment Pipeline
+
+on:
+  push:
+    branches: ["main", "master"]
+  pull_request:
+    branches: ["main", "master"]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [20.x]
+
+    steps:
+      - name: Checkout Neural Core
+        uses: actions/checkout@v4
+
+      - name: Initialize Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: "npm"
+
+      - name: Synchronize Dependencies
+        run: npm ci
+
+      - name: Initialize Prisma Nodes
+        run: npx prisma generate
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
+      - name: Assemble Production Build
+        run: npm run build
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          NEXT_PUBLIC_KINDE_CLIENT_ID: ${{ secrets.NEXT_PUBLIC_KINDE_CLIENT_ID }}
+          KINDE_CLIENT_SECRET: ${{ secrets.KINDE_CLIENT_SECRET }}
+          KINDE_ISSUER_URL: ${{ secrets.KINDE_ISSUER_URL }}
+          NEXT_PUBLIC_KINDE_SITE_URL: ${{ secrets.NEXT_PUBLIC_KINDE_SITE_URL }}
+          NEXT_PUBLIC_KINDE_POST_LOGOUT_REDIRECT_URL: ${{ secrets.NEXT_PUBLIC_KINDE_POST_LOGOUT_REDIRECT_URL }}
+          NEXT_PUBLIC_KINDE_POST_LOGIN_REDIRECT_URL: ${{ secrets.NEXT_PUBLIC_KINDE_POST_LOGIN_REDIRECT_URL }}
+          ARCJET_KEY: ${{ secrets.ARCJET_KEY }}
+
+      - name: Docker Build Verification
+        run: docker build -t saas-teamworkflow:latest .

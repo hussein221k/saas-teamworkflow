@@ -1,11 +1,15 @@
 import { z } from "zod";
 
+export const PlanEnum = z.enum(["FREE", "PRO", "ENTERPRISE"]);
+export const BillingStatusEnum = z.enum(["ACTIVE", "EXPIRED", "CANCELED"]);
+
 export const createBillingSchema = z.object({
   teamId: z.number().int(),
-  plan: z.enum(["FREE", "PRO", "ENTERPRISE"]),
+  plan: PlanEnum.default("FREE"),
+  status: BillingStatusEnum.default("ACTIVE"),
 });
 
 export const updateBillingSchema = z.object({
-  plan: z.enum(["FREE", "PRO", "ENTERPRISE"]).optional(),
-  status: z.enum(["ACTIVE", "EXPIRED", "CANCELED"]).optional(),
+  plan: PlanEnum.optional(),
+  status: BillingStatusEnum.optional(),
 });
