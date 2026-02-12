@@ -75,7 +75,7 @@ export default function InitializationShowcase() {
             </div>
           </div>
 
-          <div className="flex-1 relative w-full aspect-square max-w-[600px]">
+          <div className="flex-1 relative w-full aspect-square max-w-150">
             {/* Holographic Terminal Mockup */}
             <div className="absolute inset-0 bg-indigo-500/20 rounded-full blur-[120px] animate-pulse" />
             

@@ -1,3 +1,16 @@
+// ============================================================================
+// PLAN CONFIGURATION
+// ============================================================================
+
+/**
+ * PLAN_RULES
+ * Defines feature limits and capabilities for each subscription plan.
+ *
+ * Structure:
+ * - FREE: Basic access with limited features
+ * - PRO: Full access with unlimited projects and tasks
+ * - ENTERPRISE: Full access with additional enterprise features
+ */
 export const PLAN_RULES = {
   FREE: {
     canUseAI: false,
@@ -14,4 +27,4 @@ export const PLAN_RULES = {
     maxProjects: Infinity,
     maxTasks: Infinity,
   },
-} as const
+} as const;

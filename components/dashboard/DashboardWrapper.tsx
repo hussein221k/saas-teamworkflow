@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef } from "react";
 import { gsap } from "gsap";
-import { Info, HelpCircle, PhoneCall } from "lucide-react";
+import { Info, PhoneCall } from "lucide-react";
 import Link from "next/link";
 import {
   Tooltip,
@@ -25,7 +25,7 @@ export default function DashboardWrapper({ children }: { children: React.ReactNo
   return (
     <div ref={wrapperRef} className="flex h-screen bg-black w-full overflow-hidden relative">
       {/* Decorative Glow Pull Effect */}
-      <div className="absolute top-0 right-1/4 w-[2px] h-full bg-linear-to-b from-transparent via-primary/20 to-transparent pointer-events-none animate-pulse" />
+      <div className="absolute top-0 right-1/4 w-0.5 h-full bg-linear-to-b from-transparent via-primary/20 to-transparent pointer-events-none animate-pulse" />
       <div className="absolute top-1/4 left-0 w-full h-px bg-linear-to-r from-transparent via-primary/10 to-transparent pointer-events-none" />
 
       {/* Floating Action Menu (Quick Nav) */}

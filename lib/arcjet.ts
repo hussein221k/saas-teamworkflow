@@ -1,6 +1,15 @@
 import arcjet, { detectBot, fixedWindow, shield } from "@arcjet/next";
 
-// Re-export so it can be used in other files
+/**
+ * Arcjet Security Configuration
+ * Configures rate limiting, bot detection, and shield protection for the application.
+ *
+ * Features:
+ * - Rate limiting: 60 requests per minute per IP
+ * - Bot detection: Blocks malicious bots while allowing search engines
+ * - Shield protection: Guards against SQL injection, XSS, and CSRF
+ */
+
 export const aj = arcjet({
   key: process.env.ARCJET_KEY!, // Get your site key from https://app.arcjet.com
   characteristics: ["ip.src"], // Track requests by IP address

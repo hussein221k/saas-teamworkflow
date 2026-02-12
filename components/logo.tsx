@@ -1,6 +1,6 @@
 import { cn } from '@/lib/utils'
 
-export const Logo = ({ className, uniColor }: { className?: string; uniColor?: boolean }) => {
+export const Logo = ({ className }: { className?: string; }) => {
     return (
         <div className={cn("flex items-center gap-2", className)}>
             <div className="relative w-8 h-8">
@@ -33,7 +33,7 @@ export const Logo = ({ className, uniColor }: { className?: string; uniColor?: b
     )
 }
 
-export const LogoIcon = ({ className, uniColor }: { className?: string; uniColor?: boolean }) => {
+export const LogoIcon = ({ className}: { className?: string; }) => {
     return (
         <svg
             viewBox="0 0 32 32"

@@ -1,29 +1,25 @@
-import { getKindeServerSession } from "@kinde-oss/kinde-auth-nextjs/server";
+import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import PricingPageClient from "./PricingPageClient";
 
 export default async function PricingPage() {
-  const { getUser } = getKindeServerSession();
-  const user = await getUser();
+  const user = await getSession();
 
-  let dbUser: any = null;
-  if (user?.email) {
-    dbUser = await prisma.user.findUnique({
-        where: { email: user.email },
-        include: { team: { include: { billing: true } } },
-    });
-  }
+  const dbUser = await prisma.user.findUnique({
+    where: user?.email ? { email: user.email } : { id: -1 },
+    include: { team: { include: { billing: true } } },
+  });
 
   const team = dbUser?.team;
   const isOwner = team?.ownerId === dbUser?.id;
   const currentPlan = team?.billing?.plan || "NONE";
 
   return (
-    <PricingPageClient 
-        dbUser={dbUser} 
-        team={team} 
-        isOwner={isOwner} 
-        currentPlan={currentPlan} 
+    <PricingPageClient
+      dbUser={dbUser}
+      team={team}
+      isOwner={isOwner}
+      currentPlan={currentPlan}
     />
   );
 }

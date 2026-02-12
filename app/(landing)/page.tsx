@@ -1,12 +1,12 @@
-"use client";
+'use client'
 
+import React, { useEffect, useRef } from 'react'
 import HeroSection from '@/components/hero-section'
 import FeaturesSection from '@/components/features-section'
 import InitializationShowcase from '@/components/initialization-showcase'
-import React, { useEffect, useRef } from 'react'
 import gsap from 'gsap'
 
-function page() {
+export default function Page() {
   const containerRef = useRef(null)
 
   useEffect(() => {
@@ -32,4 +32,3 @@ function page() {
   )
 }
 
-export default page

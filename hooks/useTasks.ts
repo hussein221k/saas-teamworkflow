@@ -1,16 +1,78 @@
 "use client";
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getTeamTasks, createTask, updateTaskStatus } from "@/server/actions/task";
+import {
+  getTeamTasks,
+  createTask,
+  updateTaskStatus,
+} from "@/server/actions/task";
 import { TaskStatus } from "@prisma/client";
 import { toast } from "sonner";
 import { useCallback } from "react";
 
+// ============================================================================
+// TYPE DEFINITIONS
+// ============================================================================
+
+/**
+ * Task data interface matching Prisma schema
+ */
+interface TaskData {
+  id: number;
+  title: string;
+  description: string;
+  status: TaskStatus;
+  createdAt: string;
+  assignedTo: { name: string; id: number } | null;
+  assignedToId: number | undefined;
+  teamId: number;
+  deadline?: Date | undefined;
+  userId: string;
+}
+
+/**
+ * Input data for creating a new task
+ */
+interface TaskInput {
+  title: string;
+  description?: string;
+  status?: TaskStatus;
+  assignedToId?: number;
+  deadline?: string;
+}
+
+/**
+ * Parameter type for createTask server action
+ */
+interface CreateTaskParams {
+  title: string;
+  description?: string;
+  status?: TaskStatus;
+  assignedToId?: number;
+  deadline?: string;
+  userId?: string;
+}
+
+// ============================================================================
+// HOOK DEFINITION
+// ============================================================================
+
+/**
+ * useTasks Hook
+ * Manages task fetching, creation, and status updates for a team.
+ * Provides optimistic updates for better user experience.
+ *
+ * @param teamId - The ID of the team to fetch tasks for
+ */
 export function useTasks(teamId: number) {
   const queryClient = useQueryClient();
 
   // 🔹 Fetch Tasks with cache
-  const { data: tasks = [], isLoading, refetch } = useQuery({
+  const {
+    data: tasks = [],
+    isLoading,
+    refetch,
+  } = useQuery({
     queryKey: ["tasks", teamId],
     queryFn: async () => {
       const result = await getTeamTasks(teamId);
@@ -19,22 +81,30 @@ export function useTasks(teamId: number) {
         if (fetchedTasks.length === 0) {
           // Return Demo Data if empty
           return [
-            { 
-              id: -1, 
-              title: "Welcome to your Command Center 🚀", 
-              description: "This is a demo task showing how projects are organized.",
+            {
+              id: -1,
+              title: "Welcome to your Command Center 🚀",
+              description:
+                "This is a demo task showing how projects are organized.",
               status: TaskStatus.IN_PROGRESS,
               createdAt: new Date().toISOString(),
-              assignedTo: { name: "Nebula AI" }
+              assignedTo: { name: "Nebula AI", id: -1 },
+              assignedToId: -1,
+              teamId: teamId,
+              deadline: undefined,
             },
-            { 
-              id: -2, 
-              title: "Sync Team Workflow Protocols", 
-              description: "Initialize team sync and verify encrypted channels.",
+            {
+              id: -2,
+              title: "Sync Team Workflow Protocols",
+              description:
+                "Initialize team sync and verify encrypted channels.",
               status: TaskStatus.PENDING,
               createdAt: new Date().toISOString(),
-              assignedTo: { name: "System" }
-            }
+              assignedTo: { name: "System", id: -2 },
+              assignedToId: -2,
+              teamId: teamId,
+              deadline: undefined,
+            },
           ];
         }
         return fetchedTasks;
@@ -47,8 +117,8 @@ export function useTasks(teamId: number) {
 
   // 🔹 Add Task Mutation
   const addTaskMutation = useMutation({
-    mutationFn: (data: { title: string; description?: string; status?: TaskStatus; assignedToId?: number; deadline?: string }) => 
-      createTask(teamId, data as any),
+    mutationFn: (data: TaskInput) =>
+      createTask(teamId, data as CreateTaskParams),
     onSuccess: (result) => {
       if (result.success) {
         toast.success("Task synchronized across nodes.");
@@ -61,25 +131,49 @@ export function useTasks(teamId: number) {
 
   // 🔹 Update Status Mutation
   const updateStatusMutation = useMutation({
-    mutationFn: ({ taskId, status }: { taskId: number, status: TaskStatus }) => 
+    mutationFn: ({ taskId, status }: { taskId: number; status: TaskStatus }) =>
       updateTaskStatus(taskId, status),
     onSuccess: (result, variables) => {
       if (result.success) {
         // Optimistic update
-        queryClient.setQueryData(["tasks", teamId], (old: any[] | undefined) => {
-          return old?.map(t => t.id === variables.taskId ? { ...t, status: variables.status } : t) || [];
-        });
+        queryClient.setQueryData(
+          ["tasks", teamId],
+          (old: TaskData[] | undefined) => {
+            return (
+              old?.map((t) =>
+                t.id === variables.taskId
+                  ? { ...t, status: variables.status }
+                  : t,
+              ) || []
+            );
+          },
+        );
       }
     },
   });
 
-  const addTask = useCallback(async (data: any) => {
-    return addTaskMutation.mutateAsync(data);
-  }, [addTaskMutation]);
+  /**
+   * Add a new task
+   * @param data - Task input data
+   */
+  const addTask = useCallback(
+    async (data: TaskInput) => {
+      return addTaskMutation.mutateAsync(data);
+    },
+    [addTaskMutation],
+  );
 
-  const updateStatus = useCallback(async (taskId: number, status: TaskStatus) => {
-    return updateStatusMutation.mutate({ taskId, status });
-  }, [updateStatusMutation]);
+  /**
+   * Update task status
+   * @param taskId - ID of the task to update
+   * @param status - New status for the task
+   */
+  const updateStatus = useCallback(
+    async (taskId: number, status: TaskStatus) => {
+      return updateStatusMutation.mutate({ taskId, status });
+    },
+    [updateStatusMutation],
+  );
 
   return {
     tasks,
@@ -87,6 +181,6 @@ export function useTasks(teamId: number) {
     refreshTasks: refetch,
     addTask,
     updateStatus,
-    isMutating: addTaskMutation.isPending || updateStatusMutation.isPending
+    isMutating: addTaskMutation.isPending || updateStatusMutation.isPending,
   };
 }

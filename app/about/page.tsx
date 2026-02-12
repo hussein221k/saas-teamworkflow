@@ -4,7 +4,6 @@ import React, { useEffect, useRef } from "react";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
 import { Brain, Rocket, Shield, Globe, Users, Zap } from "lucide-react";
 
 gsap.registerPlugin(ScrollTrigger);
@@ -53,7 +52,7 @@ export default function AboutPage() {
       {/* Dynamic Background */}
       <div className="fixed inset-0 pointer-events-none">
         <div className="absolute top-0 left-1/4 w-96 h-96 bg-primary/10 blur-[120px] rounded-full animate-pulse" />
-        <div className="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-blue-500/10 blur-[150px] rounded-full" />
+        <div className="absolute bottom-0 right-1/4 w-125 h-125 bg-blue-500/10 blur-[150px] rounded-full" />
       </div>
 
       {/* Hero Section */}
@@ -66,7 +65,7 @@ export default function AboutPage() {
         </h1>
         <p className="max-w-2xl text-lg text-zinc-400 font-medium leading-relaxed">
           Founded in the overlap between neural networks and human collaboration. 
-          We build the systems that teams use to conquer complexity and redefine what "done" means.
+          We build the systems that teams use to conquer complexity and redefine what done means.
         </p>
       </section>
 

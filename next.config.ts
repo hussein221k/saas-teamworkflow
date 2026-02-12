@@ -20,11 +20,6 @@ const nextConfig = {
       },
       {
         protocol: "https",
-        hostname: "kinde.com",
-        pathname: "/**",
-      },
-      {
-        protocol: "https",
         hostname: "tanstack.com",
         pathname: "/**",
       },

@@ -6,7 +6,6 @@ datasource db {
   provider = "postgresql"
 }
 
-
 // ==============================
 // Enums
 // ==============================
@@ -40,19 +39,24 @@ enum BillingStatus {
 // ==============================
 
 model User {
-  id       Int    @id @default(autoincrement())
-  name     String
-  email    String? @unique
-  username String? @unique
+  id           Int     @id @default(autoincrement())
+  name         String
+  email        String? @unique
+  username     String? @unique
   employeeCode String? @unique
-  password String
-  role     Role   @default(EMPLOYEE)
+  password     String
+  role         Role    @default(EMPLOYEE)
 
-  teamId Int?
+  isBilling   Boolean
+  billingType Plan?
+  teamId      Int?
   createdById Int?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  billingDay    DateTime?
+  billingFinish DateTime?
 
   // 🔹 Team membership
   team Team? @relation("TeamMembers", fields: [teamId], references: [id])
@@ -89,13 +93,30 @@ model Team {
   // 🔹 Members
   users User[] @relation("TeamMembers")
 
-  tasks    Task[]
-  messages Message[]
-  channels Channel[]
-  projects Project[]
-  billing  Billing?
-  themeColor String @default("#6366f1")
-  inviteCode String? @unique
+  // 🔹 Billing
+  billing Billing?
+
+  tasks      Task[]
+  messages   Message[]
+  channels   Channel[]
+  projects   Project[]
+  themeColor String    @default("#6366f1")
+  inviteCode String?   @unique
+}
+
+// ==============================
+// Billing
+// ==============================
+
+model Billing {
+  id        Int           @id @default(autoincrement())
+  teamId    Int           @unique
+  plan      Plan          @default(FREE)
+  status    BillingStatus @default(ACTIVE)
+  startedAt DateTime      @default(now())
+  endsAt    DateTime?
+
+  team Team @relation(fields: [teamId], references: [id], onDelete: Restrict)
 }
 
 model Project {
@@ -104,9 +125,8 @@ model Project {
   teamId    Int
   createdAt DateTime @default(now())
 
-  team      Team     @relation(fields: [teamId], references: [id])
+  team Team @relation(fields: [teamId], references: [id])
 }
-
 
 model Channel {
   id        Int      @id @default(autoincrement())
@@ -116,22 +136,6 @@ model Channel {
 
   team     Team      @relation(fields: [teamId], references: [id])
   messages Message[]
-}
-
-// ==============================
-// Billing (Team only)
-// ==============================
-
-model Billing {
-  id     Int           @id @default(autoincrement())
-  teamId Int           @unique
-  plan   Plan          @default(FREE)
-  status BillingStatus @default(ACTIVE)
-
-  startedAt DateTime  @default(now())
-  endsAt    DateTime?
-
-  team Team @relation(fields: [teamId], references: [id])
 }
 
 // ==============================
@@ -182,8 +186,8 @@ model Comment {
 // ==============================
 
 model Message {
-  id        Int      @id @default(autoincrement())
-  content   String
+  id      Int    @id @default(autoincrement())
+  content String
 
   channelId Int?
   teamId    Int
@@ -192,6 +196,6 @@ model Message {
   createdAt DateTime @default(now())
 
   channel Channel? @relation(fields: [channelId], references: [id])
-  team    Team    @relation(fields: [teamId], references: [id])
-  user    User    @relation(fields: [userId], references: [id])
+  team    Team     @relation(fields: [teamId], references: [id])
+  user    User     @relation(fields: [userId], references: [id])
 }

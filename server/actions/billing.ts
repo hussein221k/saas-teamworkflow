@@ -1,40 +1,46 @@
 "use server";
 
-import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { addYears } from "date-fns";
-
-const PlanSchema = z.enum(["FREE", "PRO", "ENTERPRISE"]);
+import { Plan } from "@prisma/client";
 
 export async function upgradePlan(teamId: number) {
   try {
     const endsAt = addYears(new Date(), 1); // Enforce yearly (1 year from now)
 
-    const existingBilling = await prisma.billing.findUnique({
-      where: { teamId },
+    // Find users with this teamId who have billing enabled
+    const usersWithBilling = await prisma.user.findMany({
+      where: { teamId, isBilling: true },
     });
 
-    if (existingBilling) {
-      await prisma.billing.update({
-        where: { teamId },
-        data: { 
-          plan: "PRO", 
-          status: "ACTIVE",
-          endsAt: endsAt,
-          startedAt: new Date(),
+    if (usersWithBilling.length > 0) {
+      // Update billing user
+      await prisma.user.update({
+        where: { id: usersWithBilling[0].id },
+        data: {
+          billingType: "PRO",
+          billingDay: new Date(),
+          billingFinish: endsAt,
         },
       });
     } else {
-      await prisma.billing.create({
-        data: {
-          teamId,
-          plan: "PRO",
-          status: "ACTIVE",
-          endsAt: endsAt,
-          startedAt: new Date(),
-        },
+      // Find any team member to set as billing user
+      const teamMember = await prisma.user.findFirst({
+        where: { teamId },
       });
+
+      if (teamMember) {
+        await prisma.user.update({
+          where: { id: teamMember.id },
+          data: {
+            isBilling: true,
+            billingType: "PRO",
+            billingDay: new Date(),
+            billingFinish: endsAt,
+          },
+        });
+      }
     }
 
     revalidatePath("/billing");
@@ -48,25 +54,19 @@ export async function upgradePlan(teamId: number) {
 
 export async function downgradePlan(teamId: number) {
   try {
-    const existingBilling = await prisma.billing.findUnique({
-      where: { teamId },
+    // Find users with this teamId who have billing enabled
+    const usersWithBilling = await prisma.user.findMany({
+      where: { teamId, isBilling: true },
     });
 
-    if (existingBilling) {
-      await prisma.billing.update({
-        where: { teamId },
-        data: { 
-          plan: "FREE", 
-          status: "ACTIVE",
-          endsAt: null, // Reset expiry for free plan
-        },
-      });
-    } else {
-       await prisma.billing.create({
+    if (usersWithBilling.length > 0) {
+      // Update billing user
+      await prisma.user.update({
+        where: { id: usersWithBilling[0].id },
         data: {
-          teamId,
-          plan: "FREE",
-          status: "ACTIVE",
+          billingType: "FREE",
+          billingDay: null,
+          billingFinish: null,
         },
       });
     }
@@ -81,32 +81,74 @@ export async function downgradePlan(teamId: number) {
 }
 
 export async function checkSubscriptionStatus(teamId: number) {
-    try {
-        const billing = await prisma.billing.findUnique({
-            where: { teamId },
-        });
+  try {
+    // Find users with this teamId who have billing enabled
+    const billingUser = await prisma.user.findFirst({
+      where: { teamId, isBilling: true },
+    });
 
-        if (billing && billing.plan !== "FREE" && billing.endsAt && new Date() > billing.endsAt) {
-            // Revert to FREE
-            await prisma.billing.update({
-                where: { teamId },
-                data: { plan: "FREE", status: "EXPIRED" }
-            });
-            revalidatePath("/dashboard");
-            return { plan: "FREE", expired: true };
-        }
-        return { plan: billing?.plan || "FREE", expired: false };
-    } catch (error) {
-        return { plan: "FREE", expired: false };
+    if (
+      billingUser &&
+      billingUser.billingType &&
+      billingUser.billingType !== "FREE" &&
+      billingUser.billingDay &&
+      billingUser.billingFinish &&
+      new Date() > billingUser.billingFinish
+    ) {
+      // Revert to FREE
+      await prisma.user.update({
+        where: { id: billingUser.id },
+        data: {
+          billingType: "FREE",
+          billingFinish: null,
+        },
+      });
+      revalidatePath("/dashboard");
+      return { plan: "FREE" as Plan, expired: true };
     }
+    return {
+      plan: (billingUser?.billingType || "FREE") as Plan,
+      expired: false,
+    };
+  } catch (error) {
+    console.error("Failed to check subscription status:", error);
+    return { plan: "FREE" as Plan, expired: false };
+  }
 }
 
 export async function getBillingInfo(teamId: number) {
   try {
-    const billing = await prisma.billing.findUnique({
-      where: { teamId },
+    // Find users with this teamId who have billing enabled
+    const billingUser = await prisma.user.findFirst({
+      where: { teamId, isBilling: true },
     });
-    return billing;
+
+    if (!billingUser) {
+      // Try to find any team member
+      const teamMember = await prisma.user.findFirst({
+        where: { teamId },
+      });
+
+      if (!teamMember) {
+        return null;
+      }
+
+      return {
+        teamId,
+        billingType: teamMember.billingType || "FREE",
+        billingDay: teamMember.billingDay,
+        billingFinish: teamMember.billingFinish,
+        isBilling: teamMember.isBilling,
+      };
+    }
+
+    return {
+      teamId,
+      billingType: billingUser.billingType || "FREE",
+      billingDay: billingUser.billingDay,
+      billingFinish: billingUser.billingFinish,
+      isBilling: billingUser.isBilling,
+    };
   } catch (error) {
     console.error("Failed to get billing info:", error);
     return null;

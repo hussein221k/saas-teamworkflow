@@ -1,26 +1,29 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
-import { getKindeServerSession } from "@kinde-oss/kinde-auth-nextjs/server";
+import { getSession } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 import { MessageSchema } from "@/schema/MessageSchema";
 
-export async function sendMessage(teamId: number, content: string, channelId?: number) {
-  const { getUser } = getKindeServerSession();
-  const user = await getUser();
+export async function sendMessage(
+  teamId: number,
+  content: string,
+  channelId?: number,
+) {
+  const sessionUser = await getSession();
 
-  if (!user || !user.email) {
+  if (!sessionUser || !sessionUser.email) {
     return { success: false, error: "Unauthorized" };
   }
 
   const parse = MessageSchema.safeParse({ content, teamId });
   if (!parse.success) {
-      const errorMsg = parse.error.issues[0]?.message || "Invalid input";
-      return { success: false, error: errorMsg };
+    const errorMsg = parse.error.issues[0]?.message || "Invalid input";
+    return { success: false, error: errorMsg };
   }
 
   const dbUser = await prisma.user.findUnique({
-    where: { email: user.email },
+    where: { email: sessionUser.email },
   });
 
   if (!dbUser) {
@@ -28,7 +31,7 @@ export async function sendMessage(teamId: number, content: string, channelId?: n
   }
 
   try {
-    const newMessage = await (prisma.message as any).create({
+    const newMessage = await prisma.message.create({
       data: {
         content: parse.data.content,
         teamId: parse.data.teamId,
@@ -36,8 +39,8 @@ export async function sendMessage(teamId: number, content: string, channelId?: n
         channelId: channelId || null,
       },
       include: {
-        user: { select: { name: true } }
-      }
+        user: { select: { name: true } },
+      },
     });
 
     revalidatePath("/dashboard");
@@ -50,17 +53,17 @@ export async function sendMessage(teamId: number, content: string, channelId?: n
 
 export async function getTeamMessages(teamId: number, channelId?: number) {
   try {
-    const messages = await (prisma.message as any).findMany({
-      where: { 
-          teamId,
-          channelId: channelId || null 
+    const messages = await prisma.message.findMany({
+      where: {
+        teamId,
+        channelId: channelId || null,
       },
       orderBy: { createdAt: "asc" },
       include: {
         user: {
-            select: { name: true, email: true }
-        }
-      }
+          select: { name: true, email: true },
+        },
+      },
     });
 
     return { success: true, messages };

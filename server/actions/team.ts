@@ -1,6 +1,6 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 "use server";
 
-import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { TeamSchema } from "@/schema/TeamSchema";
 import { revalidatePath } from "next/cache";
@@ -24,8 +24,8 @@ export async function createTeam(name: string, ownerId: number) {
         name: validatedData.name,
         ownerId: ownerId,
         users: {
-          connect: { id: ownerId } // Automatically add creator as member
-        }
+          connect: { id: ownerId }, // Automatically add creator as member
+        },
       },
     });
 
@@ -34,7 +34,7 @@ export async function createTeam(name: string, ownerId: number) {
     // However, let's be explicit if needed, but `connect` should handle it for 1-to-many.
     // Actually, in 1-to-many, `users` is the relation back to User.
     // Updating the relation from Team side updates the FK on User side.
-    
+
     revalidatePath("/dashboard");
     return { success: true, team: newTeam };
   } catch (error) {
@@ -87,76 +87,87 @@ export async function getTeamsByOwner(ownerId: number) {
 }
 
 export async function getTeamMembers(teamId: number) {
-    try {
-        const team = await prisma.team.findUnique({
-            where: { id: teamId },
-            include: { users: true }
-        });
-        return team?.users || [];
-    } catch (error) {
-        console.error("Failed to fetch team members:", error);
-        return [];
-    }
+  try {
+    const team = await prisma.team.findUnique({
+      where: { id: teamId },
+      include: { users: true },
+    });
+    return team?.users || [];
+  } catch (error) {
+    console.error("Failed to fetch team members:", error);
+    return [];
+  }
 }
 
 export async function removeMemberFromTeam(memberId: number, teamId: number) {
-    try {
-        // Validation: Check if the user trying to kick is the admin (should be done in UI-calling action, but here for safety)
-        // For simplicity, we just set teamId to null if the member is not the owner
-        const team = await ensureTeam(teamId);
-        if (team.ownerId === memberId) return { success: false, error: "Owner cannot be expelled from their own cluster." };
+  try {
+    // Validation: Check if the user trying to kick is the admin (should be done in UI-calling action, but here for safety)
+    // For simplicity, we just set teamId to null if the member is not the owner
+    const team = await ensureTeam(teamId);
+    if (team.ownerId === memberId)
+      return {
+        success: false,
+        error: "Owner cannot be expelled from their own cluster.",
+      };
 
-        await prisma.user.update({
-            where: { id: memberId },
-            data: { teamId: null }
-        });
+    await prisma.user.update({
+      where: { id: memberId },
+      data: { teamId: null },
+    });
 
-        revalidatePath("/dashboard");
-        return { success: true };
-    } catch (error) {
-        console.error("Kick failure:", error);
-        return { success: false, error: "Decommissioning protocol failed." };
-    }
+    revalidatePath("/dashboard");
+    return { success: true };
+  } catch (error) {
+    console.error("Kick failure:", error);
+    return { success: false, error: "Decommissioning protocol failed." };
+  }
 }
 
 export async function generateTeamInvite(teamId: number) {
-    try {
-        const inviteCode = Math.random().toString(36).substring(2, 10).toUpperCase();
-        await (prisma.team as any).update({
-            where: { id: teamId },
-            data: { inviteCode }
-        });
-        revalidatePath("/dashboard");
-        return { success: true, code: inviteCode };
-    } catch (error) {
-        return { success: false, error: "Neural link generation failed." };
-    }
+  try {
+    const inviteCode = Math.random()
+      .toString(36)
+      .substring(2, 10)
+      .toUpperCase();
+    await prisma.team.update({
+      where: { id: teamId },
+      data: { inviteCode },
+    });
+    revalidatePath("/dashboard");
+    return { success: true, code: inviteCode };
+  } catch (error) {
+    return { success: false, error: "Neural link generation failed." };
+  }
 }
 
 export async function joinTeamByCode(userId: number, code: string) {
-    const security = await secureAction();
-    if (security.denied) return { success: false, error: security.error };
+  const security = await secureAction();
+  if (security.denied) return { success: false, error: security.error };
 
-    const inviteCode = code.trim().toUpperCase();
-    if (!inviteCode) return { success: false, error: "Invalid protocol string." };
+  const inviteCode = code.trim().toUpperCase();
+  if (!inviteCode) return { success: false, error: "Invalid protocol string." };
 
-    try {
-        const team = await (prisma.team as any).findUnique({
-            where: { inviteCode }
-        });
+  try {
+    const team = await prisma.team.findUnique({
+      where: { inviteCode },
+    });
 
-        if (!team) return { success: false, error: "Signal lost: Cluster identity not found." };
+    if (!team)
+      return {
+        success: false,
+        error: "Signal lost: Cluster identity not found.",
+      };
 
-        await prisma.user.update({
-            where: { id: userId },
-            data: { teamId: team.id }
-        });
+    await prisma.user.update({
+      where: { id: userId },
+      data: { teamId: team.id },
+    });
 
-        revalidatePath("/dashboard");
-        return { success: true, teamId: team.id };
-    } catch (error) {
-        return { success: false, error: "Synchronization error." };
-    }
+    revalidatePath("/dashboard");
+    return { success: true, teamId: team.id };
+  } catch (error) {
+    return { success: false, error: "Synchronization error." };
+  }
 }
 
 export async function switchTeam(userId: number, teamId: number) {
@@ -164,18 +175,18 @@ export async function switchTeam(userId: number, teamId: number) {
     const team = await ensureTeam(teamId);
 
     if (team.ownerId !== userId) {
-        // Simple permission check: Can only switch to owned teams for now, unless we check membership differently.
-        // Actually, if they are ALREADY a member, they are already in it.
-        // If they want to SWITCH (meaning change their `teamId`), they must be allowed to join.
-        // If they own it, they can join.
-        return { success: false, error: "You can only switch to teams you own." };
+      // Simple permission check: Can only switch to owned teams for now, unless we check membership differently.
+      // Actually, if they are ALREADY a member, they are already in it.
+      // If they want to SWITCH (meaning change their `teamId`), they must be allowed to join.
+      // If they own it, they can join.
+      return { success: false, error: "You can only switch to teams you own." };
     }
 
     await prisma.user.update({
       where: { id: userId },
       data: { teamId },
     });
-    
+
     revalidatePath("/dashboard");
     return { success: true };
   } catch (error) {
@@ -190,41 +201,44 @@ export async function getUserTeams(userId: number) {
     const ownedTeams = await prisma.team.findMany({
       where: { ownerId: userId },
     });
-    
+
     // Get user's current team (even if not owned)
     const currentUser = await prisma.user.findUnique({
-        where: { id: userId },
-        include: { team: true }
+      where: { id: userId },
+      include: { team: true },
     });
 
     const teams = [...ownedTeams];
-    
+
     if (currentUser?.team) {
-        const team = currentUser.team;
-        const isAlreadyInList = teams.some(t => t.id === team.id);
-        if (!isAlreadyInList) {
-            teams.push(team);
-        }
+      const team = currentUser.team;
+      const isAlreadyInList = teams.some((t) => t.id === team.id);
+      if (!isAlreadyInList) {
+        teams.push(team);
+      }
     }
-    
+
     return teams;
   } catch (error) {
     console.error("Failed to fetch user teams:", error);
     return [];
   }
 }
-export async function updateTeamColor(teamId: number, color: string) {
+export async function updateTeamColor(teamId: number, color: string , email: string) {
   try {
     // Check if team has subscription for this
-    const billing = await prisma.billing.findUnique({
-        where: { teamId }
+    const billing = await prisma.user.findUnique({
+      where: { email },
     });
 
-    if (!billing || billing.plan === "FREE") {
-        return { success: false, error: "Upgrade to PRO to customize team theme." };
+    if (!billing || billing.billingType === "FREE") {
+      return {
+        success: false,
+        error: "Upgrade to PRO to customize team theme.",
+      };
     }
 
-    const updatedTeam = await (prisma.team as any).update({
+    const updatedTeam = await prisma.team.update({
       where: { id: teamId },
       data: { themeColor: color },
     });

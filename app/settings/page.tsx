@@ -1,18 +1,16 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Switch } from "@/components/ui/switch"
-import { Separator } from "@/components/ui/separator"
-import { ModeToggle } from "@/components/ui/ModeToggle"
-import { getKindeServerSession } from "@kinde-oss/kinde-auth-nextjs/server";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
+import { ModeToggle } from "@/components/ui/ModeToggle";
+import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import { ProfileForm } from "./_components/ProfileForm";
 
 export default async function SettingsPage() {
-  const { getUser } = getKindeServerSession();
-  const user = await getUser();
+  const user = await getSession();
 
   if (!user || !user.email) {
-    return redirect("/api/auth/login");
+    return redirect("/employee/login");
   }
 
   const dbUser = await prisma.user.findUnique({
@@ -26,16 +24,15 @@ export default async function SettingsPage() {
   return (
     <main className="min-h-screen bg-muted p-6">
       <div className="mx-auto max-w-2xl space-y-6">
-
         {/* Profile Settings */}
         <Card>
           <CardHeader>
             <CardTitle>Profile</CardTitle>
           </CardHeader>
           <CardContent>
-            <ProfileForm 
-              initialName={dbUser.name} 
-              initialEmail={dbUser.email!} 
+            <ProfileForm
+              initialName={dbUser.name}
+              initialEmail={dbUser.email || ""}
             />
           </CardContent>
         </Card>
@@ -46,7 +43,6 @@ export default async function SettingsPage() {
             <CardTitle>Preferences</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-
             <div className="flex items-center justify-between">
               <div>
                 <p className="font-medium">Theme</p>
@@ -61,12 +57,13 @@ export default async function SettingsPage() {
 
             {/* Language - Keeping it static for now as requested by user logic is mostly about visuals */}
             <div className="flex items-center justify-between opacity-50 cursor-not-allowed">
-               <div>
-                  <p className="font-medium">Language</p>
-                  <p className="text-sm text-muted-foreground">English (Default)</p>
-               </div>
+              <div>
+                <p className="font-medium">Language</p>
+                <p className="text-sm text-muted-foreground">
+                  English (Default)
+                </p>
+              </div>
             </div>
-
           </CardContent>
         </Card>
 
@@ -76,17 +73,19 @@ export default async function SettingsPage() {
             <CardTitle className="text-destructive">Danger Zone</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-             <p className="text-sm text-muted-foreground">
-                Once you delete your account, there is no going back. Please be certain.
-             </p>
-             <button disabled className="bg-destructive text-destructive-foreground hover:bg-destructive/90 h-10 px-4 py-2 rounded pointer-events-none opacity-50">
-               Delete Account (Contact Support)
-             </button>
+            <p className="text-sm text-muted-foreground">
+              Once you delete your account, there is no going back. Please be
+              certain.
+            </p>
+            <button
+              disabled
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90 h-10 px-4 py-2 rounded pointer-events-none opacity-50"
+            >
+              Delete Account (Contact Support)
+            </button>
           </CardContent>
         </Card>
-
       </div>
     </main>
-  )
+  );
 }
-

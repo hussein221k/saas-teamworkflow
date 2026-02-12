@@ -3,32 +3,32 @@
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
-import { getKindeServerSession } from "@kinde-oss/kinde-auth-nextjs/server";
+import { getSession } from "@/lib/auth";
 
 const UserUpdateSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
 });
 
 export async function updateUserProfile(formData: { name: string }) {
-  const { getUser } = getKindeServerSession();
-  const user = await getUser();
+  const sessionUser = await getSession();
 
-  if (!user || !user.email) {
+  if (!sessionUser || !sessionUser.email) {
     return { success: false, error: "Unauthorized" };
   }
 
   const result = UserUpdateSchema.safeParse(formData);
   if (!result.success) {
-    const error = result.error.flatten().fieldErrors.name?.[0] || "Invalid input";
+    const error =
+      result.error.flatten().fieldErrors.name?.[0] || "Invalid input";
     return { success: false, error };
   }
 
   try {
     await prisma.user.update({
-      where: { email: user.email },
+      where: { email: sessionUser.email },
       data: { name: result.data.name },
     });
-    
+
     revalidatePath("/profile");
     revalidatePath("/settings");
     return { success: true };
@@ -39,23 +39,20 @@ export async function updateUserProfile(formData: { name: string }) {
 }
 
 export async function deleteUserAccount() {
-    const { getUser } = getKindeServerSession();
-    const user = await getUser();
-  
-    if (!user || !user.email) {
-      return { success: false, error: "Unauthorized" };
-    }
+  const sessionUser = await getSession();
 
-    try {
-        // In a real app, you'd delete from Auth provider (Kinde) AND DB.
-        // Here we just delete from DB.
-        await prisma.user.delete({
-            where: { email: user.email }
-        });
-        
-        return { success: true };
-    } catch (error) {
-        console.error("Failed to delete account:", error);
-        return { success: false, error: "Failed to delete account" };
-    }
+  if (!sessionUser || !sessionUser.email) {
+    return { success: false, error: "Unauthorized" };
+  }
+
+  try {
+    await prisma.user.delete({
+      where: { email: sessionUser.email },
+    });
+
+    return { success: true };
+  } catch (error) {
+    console.error("Failed to delete account:", error);
+    return { success: false, error: "Failed to delete account" };
+  }
 }

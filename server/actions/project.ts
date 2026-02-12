@@ -1,15 +1,10 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
-import { z } from "zod";
+import { ProjectInput, ProjectSchema } from "@/schema/Project";
 import { revalidatePath } from "next/cache";
 
-export const ProjectSchema = z.object({
-  name: z.string().min(2, "Project identification must be at least 2 characters."),
-  teamId: z.number(),
-});
 
-export type ProjectInput = z.infer<typeof ProjectSchema>;
 
 export async function createProject(data: ProjectInput) {
   const parse = ProjectSchema.safeParse(data);
@@ -23,7 +18,7 @@ export async function createProject(data: ProjectInput) {
     // Note: In a real app, verify $5 payment here or check credits.
     // For now, we assume the user has "paid" the $5.
     
-    const project = await (prisma as any).project.create({
+    const project = await prisma.project.create({
       data: {
         name,
         teamId,
@@ -40,7 +35,7 @@ export async function createProject(data: ProjectInput) {
 
 export async function getTeamProjects(teamId: number) {
   try {
-    return await (prisma as any).project.findMany({
+    return await prisma.project.findMany({
       where: { teamId },
       orderBy: { createdAt: "desc" },
     });
@@ -52,7 +47,7 @@ export async function getTeamProjects(teamId: number) {
 
 export async function deleteProject(projectId: number) {
   try {
-    await (prisma as any).project.delete({
+    await prisma.project.delete({
       where: { id: projectId },
     });
     revalidatePath("/dashboard");

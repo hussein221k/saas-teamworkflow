@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { upgradePlan, downgradePlan } from "@/server/actions/billing";
+import { upgradePlan } from "@/server/actions/billing";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner"; // Assuming sonner or use standard toast if available
 
@@ -22,7 +22,7 @@ export default function BillingActions({ teamId, currentPlan }: { teamId: number
     }
   };
 
-  const handleDowngrade = async () => {
+ /* const handleDowngrade = async () => {
     setLoading(true);
     const result = await downgradePlan(teamId);
     setLoading(false);
@@ -32,7 +32,7 @@ export default function BillingActions({ teamId, currentPlan }: { teamId: number
     } else {
       toast.error(result.error);
     }
-  };
+  }; */
 
   return (
     <>
