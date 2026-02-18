@@ -58,7 +58,7 @@ export async function GET(
 
     // Check if user has access to this team
     const isOwner = team.owner_id === userId;
-    const isMember = team.users.some((u) => u.id === userId);
+    const isMember = team.users.some((u: { id: string }) => u.id === userId);
 
     if (!isOwner && !isMember) {
       return NextResponse.json({ error: "Access denied" }, { status: 403 });
