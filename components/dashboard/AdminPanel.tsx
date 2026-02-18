@@ -34,7 +34,7 @@ interface AdminPanelProps {
   setIsOpen: (open: ActiveSheet | undefined) => void;
   currentTeam:
     | {
-        id: number;
+        id: string;
         name: string;
         inviteCode: string | null;
       }
@@ -46,10 +46,10 @@ interface AdminPanelProps {
   handleCreateProject: () => void;
   isCreatingProject: boolean;
   projects: {
-    id: number;
+    id: string;
     name: string;
   }[];
-  handleDeleteProject: (id: number) => void;
+  handleDeleteProject: (id: string) => void;
   empName: string;
   setEmpName: (v: string) => void;
   empCode: string;
@@ -61,13 +61,13 @@ interface AdminPanelProps {
   handleCreateEmployee: () => void;
   isCreatingEmp: boolean;
   members: {
-    id: number;
+    id: string;
     name: string;
     role: string;
-    employeeCode: string | null;
+    employee_code: string | null;
   }[];
-  onKickMember: (id: number) => void;
-  handleDeleteUnit: (id: number) => void;
+  onKickMember: (id: string) => void;
+  handleDeleteUnit: (id: string) => void;
 }
 
 export function AdminPanel({
@@ -334,7 +334,7 @@ export function AdminPanel({
                             {m.name}
                           </span>
                           <span className="text-[9px] font-black uppercase text-zinc-500">
-                            {m.employeeCode || "SYS-NODE"}
+                            {m.employee_code || "SYS-NODE"}
                           </span>
                         </div>
                       </div>

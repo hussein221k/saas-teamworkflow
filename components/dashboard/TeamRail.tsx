@@ -12,9 +12,9 @@ import { cn } from "@/lib/utils";
 import { ActiveSheet } from "./Chatchannels";
 
 interface TeamRailProps {
-  teams: { id: number; name: string }[];
-  currentTeamId: number;
-  handleSwitchTeam: (teamId: number) => void;
+  teams: { id: string; name: string }[];
+  currentteam_id: string;
+  handleSwitchTeam: (team_id: string) => void;
   setActiveSheet: (activeSheet: ActiveSheet | undefined) => void;
   isAdmin: boolean;
   colors: string[];
@@ -22,7 +22,7 @@ interface TeamRailProps {
 
 export function TeamRail({
   teams,
-  currentTeamId,
+  currentteam_id,
   handleSwitchTeam,
   setActiveSheet,
   isAdmin,
@@ -37,7 +37,7 @@ export function TeamRail({
       <ScrollArea className="flex-1 w-full">
         <div className="flex flex-col items-center gap-4 pb-4 px-2">
           {teams.map((team, index) => {
-            const isActive = team.id === currentTeamId;
+            const isActive = team.id === currentteam_id;
             return (
               <Tooltip key={team.id}>
                 <TooltipTrigger onClick={() => handleSwitchTeam(team.id)}>

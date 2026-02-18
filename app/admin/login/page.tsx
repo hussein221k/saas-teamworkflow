@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
-import { loginAdmin } from "@/server/actions/admin-auth";
+import { loginAdmin, getAdminSession } from "@/server/actions/admin-auth";
 import gsap from "gsap";
 import {
   Loader2,
@@ -17,12 +17,29 @@ import {
   ArrowRight,
   Sparkles,
 } from "lucide-react";
+import Link from "next/link";
 
 export default function AdminLoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true); // Start with true to show loading
   const router = useRouter();
+
+  // Check for existing admin session on mount
+  useEffect(() => {
+    const checkSession = async () => {
+      const session = await getAdminSession();
+      if (session && session.role === "ADMIN") {
+        // Already logged in as admin, redirect to admin dashboard
+        const teamId = session.team_id || "";
+        router.push(teamId ? `/admin/dashboard/${teamId}` : "/onboarding");
+      } else {
+        setLoading(false);
+      }
+    };
+    checkSession();
+  }, [router]);
+
 
   // Refs for GSAP animations
   const containerRef = useRef<HTMLDivElement>(null);
@@ -128,7 +145,8 @@ export default function AdminLoginPage() {
           onComplete: () => {
             toast.success("Welcome back, Admin!");
             router.refresh();
-            router.push("/admin");
+            const targetUrl = result.redirectUrl || "/admin/dashboard";
+            router.push(targetUrl);
           },
         });
       } else {
@@ -148,6 +166,15 @@ export default function AdminLoginPage() {
       setLoading(false);
     }
   };
+
+  // Show loading while checking session
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div
@@ -275,12 +302,12 @@ export default function AdminLoginPage() {
           {/* Footer link */}
           <div className="mt-6 text-center text-sm">
             <span className="text-muted-foreground">Are you an employee? </span>
-            <a
+            <Link
               href="/employee/login"
               className="font-medium text-primary transition-colors hover:text-primary/80"
             >
               Login here
-            </a>
+            </Link>
           </div>
         </CardContent>
       </Card>

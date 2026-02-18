@@ -1,5 +1,6 @@
 "use client";
 
+import { Channel } from '@/schema/ChannelSchema';
 import { useState, useMemo, useCallback } from "react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -35,31 +36,21 @@ import { useEmployeeManagement } from "./useEmployeeManagement";
 // ============================================================================
 // TYPES
 // ============================================================================
-export interface UseChatChannelsProps {
-  userId: number;
-  currentTeamId: number;
-  initialTeams: {
-    id: number;
-    name: string;
-    ownerId?: number;
-    inviteCode?: string | null;
-  }[];
-  isAdmin: boolean;
-}
+
 
 /**
  * Main hook for managing chat channels, teams, projects, and employees
  * Orchestrates multiple sub-hooks for better organization and readability
  *
- * @param userId - Current user ID
- * @param currentTeamId - Active team ID
+ * @param user_id - Current user ID
+ * @param team_id - Active team ID
  * @param initialTeams - Initial list of teams user belongs to
  * @param isAdmin - Whether user has admin privileges
  */
 export function useChatChannels({
-  userId,
-  currentTeamId,
-}: UseChatChannelsProps) {
+  user_id,
+  team_id,
+}: Channel) {
   // ============================================================================
   // UI STATE - General interface state
   // ============================================================================
@@ -83,22 +74,20 @@ export function useChatChannels({
   const queryClient = useQueryClient();
 
   // Extract active channel from URL
-  const activeChannelIdStr = searchParams.get("channelId");
-  const activeChannelId = activeChannelIdStr
-    ? Number(activeChannelIdStr)
-    : null;
+  const activeChannelIdStr = searchParams.get("channel_id");
+  const activeChannelId = activeChannelIdStr;
 
   /**
    * Navigate to a specific channel or clear channel selection
    * Updates URL params without full page reload
    */
   const navigateToChannel = useCallback(
-    (id: number | null) => {
+    (id: string | null) => {
       const params = new URLSearchParams(searchParams.toString());
       if (id) {
-        params.set("channelId", id.toString());
+        params.set("channel_id", id.toString());
       } else {
-        params.delete("channelId");
+        params.delete("channel_id");
       }
       router.push(`${pathname}?${params.toString()}`);
     },
@@ -113,9 +102,9 @@ export function useChatChannels({
    * Fetch team members with 10-minute cache
    */
   const { data: members = [] } = useQuery({
-    queryKey: ["members", currentTeamId],
-    queryFn: () => getTeamMembers(currentTeamId),
-    enabled: !!currentTeamId,
+    queryKey: ["members", team_id],
+    queryFn: () => getTeamMembers(team_id),
+    enabled: !!team_id,
     staleTime: 1000 * 60 * 10, // 10 minutes
   });
 
@@ -123,23 +112,23 @@ export function useChatChannels({
    * Fetch team channels
    */
   const { data: channels = [], refetch: refetchChannels } = useQuery({
-    queryKey: ["channels", currentTeamId],
+    queryKey: ["channels", team_id],
     queryFn: async () => {
-      const res = await getTeamChannels(currentTeamId);
+      const res = await getTeamChannels(team_id);
       return res.channels || [];
     },
-    enabled: !!currentTeamId,
+    enabled: !!team_id,
   });
 
   /**
    * Fetch team projects
    */
   const { data: projects = [], refetch: refetchProjects } = useQuery({
-    queryKey: ["projects", currentTeamId],
+    queryKey: ["projects", team_id],
     queryFn: async () => {
-      return await getTeamProjects(currentTeamId);
+      return await getTeamProjects(team_id);
     },
-    enabled: !!currentTeamId,
+    enabled: !!team_id,
   });
 
   // ============================================================================
@@ -174,7 +163,7 @@ export function useChatChannels({
 
     teamState.setIsCreating(true);
     try {
-      const result = await createTeam(teamState.newTeamName, userId);
+      const result = await createTeam(teamState.newTeamName, user_id);
       if (result.success && result.team) {
         teamState.setTeams((prev) => [...prev, result.team!]);
         teamState.resetTeamForm();
@@ -186,15 +175,15 @@ export function useChatChannels({
     } finally {
       teamState.setIsCreating(false);
     }
-  }, [teamState, userId, router]);
+  }, [teamState, user_id, router]);
 
   /**
    * Switch to a different team
    * Triggers full page refresh to load new team data
    */
   const handleSwitchTeam = useCallback(
-    async (teamId: number) => {
-      const result = await switchTeam(userId, teamId);
+    async (team_id: string) => {
+      const result = await switchTeam(user_id, team_id);
       if (result.success) {
         toast.success("Neural link established");
         router.refresh();
@@ -202,7 +191,7 @@ export function useChatChannels({
         toast.error(result.error || "Synchronization failed");
       }
     },
-    [userId, router],
+    [user_id, router],
   );
 
   /**
@@ -210,7 +199,7 @@ export function useChatChannels({
    * Returns the generated code or null on failure
    */
   const handleGenerateInvite = useCallback(async () => {
-    const result = await generateTeamInvite(currentTeamId);
+    const result = await generateTeamInvite(team_id);
     if (result.success && result.code) {
       toast.success("Invite code generated");
       return result.code;
@@ -218,7 +207,7 @@ export function useChatChannels({
       toast.error(result.error || "Generation failed");
       return null;
     }
-  }, [currentTeamId]);
+  }, [team_id]);
 
   /**
    * Join a team using invite code
@@ -229,7 +218,7 @@ export function useChatChannels({
 
     teamState.setIsJoining(true);
     try {
-      const result = await joinTeamByCode(userId, teamState.joinCodeInput);
+      const result = await joinTeamByCode(user_id, teamState.joinCodeInput);
       if (result.success) {
         teamState.resetJoinForm();
         toast.success("Neural link established");
@@ -240,7 +229,7 @@ export function useChatChannels({
     } finally {
       teamState.setIsJoining(false);
     }
-  }, [teamState, userId, router]);
+  }, [teamState, user_id, router]);
 
   // ============================================================================
   // CHANNEL ACTIONS - Channel management operations
@@ -254,7 +243,7 @@ export function useChatChannels({
     if (!channelState.newGroupName.trim()) return;
 
     const result = await createChannel(
-      currentTeamId,
+      team_id,
       channelState.newGroupName,
     );
     if (result.success) {
@@ -264,7 +253,7 @@ export function useChatChannels({
     } else {
       toast.error(result.error || "Channel creation failed");
     }
-  }, [channelState, currentTeamId, refetchChannels]);
+  }, [channelState, team_id, refetchChannels]);
 
   // ============================================================================
   // PROJECT ACTIONS - Project management operations
@@ -281,7 +270,7 @@ export function useChatChannels({
     try {
       const result = await createProject({
         name: projectState.newProjectName,
-        teamId: currentTeamId,
+        team_id: team_id,
       });
       if (result.success) {
         projectState.resetProjectForm();
@@ -293,14 +282,14 @@ export function useChatChannels({
     } finally {
       projectState.setIsCreatingProject(false);
     }
-  }, [projectState, currentTeamId, refetchProjects]);
+  }, [projectState, team_id, refetchProjects]);
 
   /**
    * Delete a project by ID
    * Refreshes project list on success
    */
   const handleDeleteProject = useCallback(
-    async (projectId: number) => {
+    async (projectId: string) => {
       const result = await deleteProject(projectId);
       if (result.success) {
         toast.success("Project terminated");
@@ -331,37 +320,41 @@ export function useChatChannels({
       const result = await createEmployee({
         name: employeeState.empName,
         username: employeeState.empUsername,
-        employeeCode: employeeState.empCode,
+        employee_code: employeeState.empCode,
         password: employeeState.empPass,
       });
 
       if (result.success) {
         employeeState.resetEmployeeForm();
         toast.success("Unit synchronized");
-        queryClient.invalidateQueries({ queryKey: ["members", currentTeamId] });
+        queryClient.invalidateQueries({
+          queryKey: ["members", team_id],
+        });
       } else {
         toast.error(result.error || "Sync failed");
       }
     } finally {
       employeeState.setIsCreatingEmp(false);
     }
-  }, [employeeState, currentTeamId, queryClient]);
+  }, [employeeState, team_id, queryClient]);
 
   /**
    * Delete an employee by ID
    * Invalidates member cache on success
    */
   const handleDeleteEmployee = useCallback(
-    async (employeeId: number) => {
+    async (employeeId: string) => {
       const result = await deleteEmployee(employeeId);
       if (result.success) {
         toast.success("Unit deactivated");
-        queryClient.invalidateQueries({ queryKey: ["members", currentTeamId] });
+        queryClient.invalidateQueries({
+          queryKey: ["members", team_id],
+        });
       } else {
         toast.error(result.error || "Deactivation failed");
       }
     },
-    [currentTeamId, queryClient],
+    [team_id, queryClient],
   );
 
   /**
@@ -369,16 +362,18 @@ export function useChatChannels({
    * Invalidates member cache on success
    */
   const handleRemoveMember = useCallback(
-    async (memberId: number) => {
-      const result = await removeMemberFromTeam(memberId, currentTeamId);
+    async (memberId: string) => {
+      const result = await removeMemberFromTeam(memberId, team_id);
       if (result.success) {
         toast.success("Member removed");
-        queryClient.invalidateQueries({ queryKey: ["members", currentTeamId] });
+        queryClient.invalidateQueries({
+          queryKey: ["members", team_id],
+        });
       } else {
         toast.error(result.error || "Removal failed");
       }
     },
-    [currentTeamId, queryClient],
+    [team_id, queryClient],
   );
 
   // ============================================================================

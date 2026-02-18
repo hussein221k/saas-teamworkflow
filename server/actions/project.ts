@@ -4,24 +4,22 @@ import { prisma } from "@/lib/prisma";
 import { ProjectInput, ProjectSchema } from "@/schema/Project";
 import { revalidatePath } from "next/cache";
 
-
-
 export async function createProject(data: ProjectInput) {
   const parse = ProjectSchema.safeParse(data);
   if (!parse.success) {
     return { success: false, error: parse.error.issues[0].message };
   }
 
-  const { name, teamId } = parse.data;
+  const { name, team_id } = parse.data;
 
   try {
     // Note: In a real app, verify $5 payment here or check credits.
     // For now, we assume the user has "paid" the $5.
-    
+
     const project = await prisma.project.create({
       data: {
         name,
-        teamId,
+        team_id,
       },
     });
 
@@ -29,15 +27,18 @@ export async function createProject(data: ProjectInput) {
     return { success: true, project };
   } catch (error) {
     console.error("Failed to create project:", error);
-    return { success: false, error: "System error during project initialization." };
+    return {
+      success: false,
+      error: "System error during project initialization.",
+    };
   }
 }
 
-export async function getTeamProjects(teamId: number) {
+export async function getTeamProjects(team_id: string) {
   try {
     return await prisma.project.findMany({
-      where: { teamId },
-      orderBy: { createdAt: "desc" },
+      where: { team_id },
+      orderBy: { created_at: "desc" },
     });
   } catch (error) {
     console.error("Failed to fetch projects:", error);
@@ -45,7 +46,7 @@ export async function getTeamProjects(teamId: number) {
   }
 }
 
-export async function deleteProject(projectId: number) {
+export async function deleteProject(projectId: string) {
   try {
     await prisma.project.delete({
       where: { id: projectId },

@@ -6,13 +6,13 @@ import { TeamSchema } from "@/schema/TeamSchema";
 import { revalidatePath } from "next/cache";
 import { secureAction } from "@/lib/security";
 
-const ensureTeam = async (id: number) => {
+const ensureTeam = async (id: string) => {
   const team = await prisma.team.findUnique({ where: { id } });
   if (!team) throw new Error("Cluster not found.");
   return team;
 };
 
-export async function createTeam(name: string, ownerId: number) {
+export async function createTeam(name: string, owner_id: string) {
   const security = await secureAction();
   if (security.denied) return { success: false, error: security.error };
 
@@ -22,15 +22,15 @@ export async function createTeam(name: string, ownerId: number) {
     const newTeam = await prisma.team.create({
       data: {
         name: validatedData.name,
-        ownerId: ownerId,
+        owner_id: owner_id,
         users: {
-          connect: { id: ownerId }, // Automatically add creator as member
+          connect: { id: owner_id }, // Automatically add creator as member
         },
       },
     });
 
-    // Since the User model has a teamId foreign key, connecting the user
-    // in the `users` relation above update the user's teamId.
+    // Since the User model has a team_id foreign key, connecting the user
+    // in the `users` relation above update the user's team_id.
     // However, let's be explicit if needed, but `connect` should handle it for 1-to-many.
     // Actually, in 1-to-many, `users` is the relation back to User.
     // Updating the relation from Team side updates the FK on User side.
@@ -43,12 +43,12 @@ export async function createTeam(name: string, ownerId: number) {
   }
 }
 
-export async function updateTeam(teamId: number, name: string) {
+export async function updateTeam(team_id: string, name: string) {
   try {
     const validatedData = TeamSchema.parse({ name });
 
     const updatedTeam = await prisma.team.update({
-      where: { id: teamId },
+      where: { id: team_id },
       data: { name: validatedData.name },
     });
 
@@ -60,10 +60,10 @@ export async function updateTeam(teamId: number, name: string) {
   }
 }
 
-export async function deleteTeam(teamId: number) {
+export async function deleteTeam(team_id: string) {
   try {
     await prisma.team.delete({
-      where: { id: teamId },
+      where: { id: team_id },
     });
     revalidatePath("/dashboard");
     return { success: true };
@@ -73,10 +73,10 @@ export async function deleteTeam(teamId: number) {
   }
 }
 
-export async function getTeamsByOwner(ownerId: number) {
+export async function getTeamsByOwner(owner_id: string) {
   try {
     const teams = await prisma.team.findMany({
-      where: { ownerId },
+      where: { owner_id },
       include: { _count: { select: { users: true } } },
     });
     return teams;
@@ -86,10 +86,10 @@ export async function getTeamsByOwner(ownerId: number) {
   }
 }
 
-export async function getTeamMembers(teamId: number) {
+export async function getTeamMembers(team_id: string) {
   try {
     const team = await prisma.team.findUnique({
-      where: { id: teamId },
+      where: { id: team_id },
       include: { users: true },
     });
     return team?.users || [];
@@ -99,12 +99,12 @@ export async function getTeamMembers(teamId: number) {
   }
 }
 
-export async function removeMemberFromTeam(memberId: number, teamId: number) {
+export async function removeMemberFromTeam(memberId: string, team_id: string) {
   try {
     // Validation: Check if the user trying to kick is the admin (should be done in UI-calling action, but here for safety)
-    // For simplicity, we just set teamId to null if the member is not the owner
-    const team = await ensureTeam(teamId);
-    if (team.ownerId === memberId)
+    // For simplicity, we just set team_id to null if the member is not the owner
+    const team = await ensureTeam(team_id);
+    if (team.owner_id === memberId)
       return {
         success: false,
         error: "Owner cannot be expelled from their own cluster.",
@@ -112,7 +112,7 @@ export async function removeMemberFromTeam(memberId: number, teamId: number) {
 
     await prisma.user.update({
       where: { id: memberId },
-      data: { teamId: null },
+      data: { team_id: null },
     });
 
     revalidatePath("/dashboard");
@@ -123,15 +123,15 @@ export async function removeMemberFromTeam(memberId: number, teamId: number) {
   }
 }
 
-export async function generateTeamInvite(teamId: number) {
+export async function generateTeamInvite(team_id: string) {
   try {
     const inviteCode = Math.random()
       .toString(36)
       .substring(2, 10)
       .toUpperCase();
     await prisma.team.update({
-      where: { id: teamId },
-      data: { inviteCode },
+      where: { id: team_id },
+      data: { invite_code: inviteCode },
     });
     revalidatePath("/dashboard");
     return { success: true, code: inviteCode };
@@ -140,16 +140,17 @@ export async function generateTeamInvite(teamId: number) {
   }
 }
 
-export async function joinTeamByCode(userId: number, code: string) {
+export async function joinTeamByCode(user_id: string, code: string) {
   const security = await secureAction();
   if (security.denied) return { success: false, error: security.error };
 
-  const inviteCode = code.trim().toUpperCase();
-  if (!inviteCode) return { success: false, error: "Invalid protocol string." };
+  const invite_code = code.trim().toUpperCase();
+  if (!invite_code)
+    return { success: false, error: "Invalid protocol string." };
 
   try {
     const team = await prisma.team.findUnique({
-      where: { inviteCode },
+      where: { invite_code },
     });
 
     if (!team)
@@ -159,32 +160,32 @@ export async function joinTeamByCode(userId: number, code: string) {
       };
 
     await prisma.user.update({
-      where: { id: userId },
-      data: { teamId: team.id },
+      where: { id: user_id },
+      data: { team_id: team.id },
     });
 
     revalidatePath("/dashboard");
-    return { success: true, teamId: team.id };
+    return { success: true, team_id: team.id };
   } catch (error) {
     return { success: false, error: "Synchronization error." };
   }
 }
 
-export async function switchTeam(userId: number, teamId: number) {
+export async function switchTeam(user_id: string, team_id: string) {
   try {
-    const team = await ensureTeam(teamId);
+    const team = await ensureTeam(team_id);
 
-    if (team.ownerId !== userId) {
+    if (team.owner_id !== user_id) {
       // Simple permission check: Can only switch to owned teams for now, unless we check membership differently.
       // Actually, if they are ALREADY a member, they are already in it.
-      // If they want to SWITCH (meaning change their `teamId`), they must be allowed to join.
+      // If they want to SWITCH (meaning change their `team_id`), they must be allowed to join.
       // If they own it, they can join.
       return { success: false, error: "You can only switch to teams you own." };
     }
 
     await prisma.user.update({
-      where: { id: userId },
-      data: { teamId },
+      where: { id: user_id },
+      data: { team_id: team_id },
     });
 
     revalidatePath("/dashboard");
@@ -195,16 +196,16 @@ export async function switchTeam(userId: number, teamId: number) {
   }
 }
 
-export async function getUserTeams(userId: number) {
+export async function getUserTeams(user_id: string) {
   try {
     // Get teams owned by user
     const ownedTeams = await prisma.team.findMany({
-      where: { ownerId: userId },
+      where: { owner_id: user_id },
     });
 
     // Get user's current team (even if not owned)
     const currentUser = await prisma.user.findUnique({
-      where: { id: userId },
+      where: { id: user_id },
       include: { team: true },
     });
 
@@ -224,14 +225,18 @@ export async function getUserTeams(userId: number) {
     return [];
   }
 }
-export async function updateTeamColor(teamId: number, color: string , email: string) {
+export async function updateTeamColor(
+  team_id: string,
+  color: string,
+  email: string,
+) {
   try {
     // Check if team has subscription for this
     const billing = await prisma.user.findUnique({
       where: { email },
     });
 
-    if (!billing || billing.billingType === "FREE") {
+    if (!billing || billing.billing_type === "FREE") {
       return {
         success: false,
         error: "Upgrade to PRO to customize team theme.",
@@ -239,8 +244,8 @@ export async function updateTeamColor(teamId: number, color: string , email: str
     }
 
     const updatedTeam = await prisma.team.update({
-      where: { id: teamId },
-      data: { themeColor: color },
+      where: { id: team_id },
+      data: { theme_color: color },
     });
 
     revalidatePath("/dashboard");

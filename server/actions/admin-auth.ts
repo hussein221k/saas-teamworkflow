@@ -68,7 +68,7 @@ export async function loginAdmin(data: z.infer<typeof AdminLoginSchema>) {
   // 2. Input Validation (Zod)
   const parse = AdminLoginSchema.safeParse(data);
   if (!parse.success) {
-    return { success: false, error: "Invalid input" };
+    return { success: false, error: "Please enter a valid email and password" };
   }
 
   const { email, password } = parse.data;
@@ -88,32 +88,42 @@ export async function loginAdmin(data: z.infer<typeof AdminLoginSchema>) {
   // 4. Sanitize inputs
   const sanitizedEmail = email.replace(/<[^>]*>/g, "").trim();
 
-  // 5. Find admin user
+  // 5. Find admin user with team info
   const user = await prisma.user.findUnique({
     where: {
       email: sanitizedEmail,
     },
+    include: {
+      team: true,
+    },
   });
 
   // 6. Check if user exists and is admin
-  if (!user || user.role !== "ADMIN") {
+  if (!user) {
     // Add artificial delay to prevent timing attacks
     await bcrypt.compare(
       password,
       "$2b$10$dummyhashedpasswordfornonexistentuser",
     );
-    return { success: false, error: "Invalid credentials" };
+    return { success: false, error: "Invalid email or password" };
+  }
+
+  if (user.role !== "ADMIN") {
+    return {
+      success: false,
+      error: "Access denied. Admin privileges required.",
+    };
   }
 
   // 7. Verify password (bcrypt handles timing attacks)
   const isMatch = await bcrypt.compare(password, user.password);
   if (!isMatch) {
-    return { success: false, error: "Invalid credentials" };
+    return { success: false, error: "Invalid email or password" };
   }
 
   // 8. Generate Session Token
   const token = await new SignJWT({
-    userId: user.id,
+    user_id: user.id,
     role: user.role,
     ip: clientIp,
   })
@@ -131,7 +141,12 @@ export async function loginAdmin(data: z.infer<typeof AdminLoginSchema>) {
     path: "/",
   });
 
-  return { success: true };
+  // Determine redirect URL
+  const dashboardId = user.team?.id;
+  const redirectUrl = `/admin/dashboard/${dashboardId}`;
+  // Fallback if no team
+
+  return { success: true, redirectUrl };
 }
 
 export async function logoutAdmin() {
@@ -145,7 +160,7 @@ export async function getAdminSession() {
     const session = cookieStore.get("admin_session");
 
     if (!session?.value) {
-      return null;
+      return;
     }
 
     // Verify the JWT token
@@ -154,24 +169,24 @@ export async function getAdminSession() {
     // Check token expiration
     const now = Math.floor(Date.now() / 1000);
     if (payload.exp && payload.exp < now) {
-      return null;
+      return;
     }
 
     // Fetch user from database
     const user = await prisma.user.findUnique({
-      where: { id: payload.userId as number },
+      where: { id: payload.user_id as string },
       select: {
         id: true,
         name: true,
         email: true,
         role: true,
-        teamId: true,
+        team_id: true,
       },
     });
 
     return user;
   } catch (error) {
     // Invalid token
-    return null;
+    return;
   }
 }

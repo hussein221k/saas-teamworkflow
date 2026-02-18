@@ -94,7 +94,7 @@ export async function loginEmployee(data: z.infer<typeof LoginSchema>) {
   const user = await prisma.user.findFirst({
     where: {
       username: sanitizedUsername,
-      employeeCode: sanitizedEmployeeCode,
+      employee_code: sanitizedEmployeeCode,
     },
   });
 
@@ -116,7 +116,7 @@ export async function loginEmployee(data: z.infer<typeof LoginSchema>) {
 
   // 8. Generate Session Token
   const token = await new SignJWT({
-    userId: user.id,
+    user_id: user.id,
     role: user.role,
     ip: clientIp,
   })
@@ -134,7 +134,12 @@ export async function loginEmployee(data: z.infer<typeof LoginSchema>) {
     path: "/",
   });
 
-  return { success: true };
+  // Determine redirect URL based on user's team
+  const redirectUrl = user.team_id
+    ? `/dashboard/${user.team_id}`
+    : "/onboarding";
+
+  return { success: true, redirectUrl };
 }
 
 export async function logoutEmployee() {
@@ -162,13 +167,13 @@ export async function getSession() {
 
     // Fetch user from database
     const user = await prisma.user.findUnique({
-      where: { id: payload.userId as number },
+      where: { id: payload.user_id as string },
       select: {
         id: true,
         name: true,
         email: true,
         role: true,
-        teamId: true,
+        team_id: true,
       },
     });
 

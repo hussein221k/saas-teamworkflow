@@ -9,14 +9,19 @@ import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 
 export function ProfileForm({ initialName, initialEmail }: { initialName: string; initialEmail: string }) {
-  const [name, setName] = useState(initialName);
-  const [loading, setLoading] = useState(false);
+  const [state, setState] = useState({
+    name: initialName,
+    loading: false,
+  });
+
+  const updateState = (updates: Partial<typeof state>) =>
+    setState((prev) => ({ ...prev, ...updates }));
   const router = useRouter();
 
   const handleSave = async () => {
-    setLoading(true);
-    const result = await updateUserProfile({ name });
-    setLoading(false);
+    updateState({ loading: true });
+    const result = await updateUserProfile({ name: state.name });
+    updateState({ loading: false });
 
     if (result.success) {
       toast.success("Profile updated");
@@ -32,8 +37,8 @@ export function ProfileForm({ initialName, initialEmail }: { initialName: string
         <Label htmlFor="name">Name</Label>
         <Input 
             id="name" 
-            value={name} 
-            onChange={(e) => setName(e.target.value)} 
+            value={state.name} 
+            onChange={(e) => updateState({ name: e.target.value })} 
             placeholder="Your Name" 
         />
       </div>
@@ -43,8 +48,8 @@ export function ProfileForm({ initialName, initialEmail }: { initialName: string
         <Input id="email" type="email" value={initialEmail} disabled className="bg-muted text-muted-foreground" />
       </div>
 
-      <Button onClick={handleSave} disabled={loading}>
-        {loading ? "Saving..." : "Save Profile"}
+      <Button onClick={handleSave} disabled={state.loading}>
+        {state.loading ? "Saving..." : "Save Profile"}
       </Button>
     </div>
   );

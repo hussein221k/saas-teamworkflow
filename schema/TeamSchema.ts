@@ -9,6 +9,7 @@ import { z } from "zod";
  * Validation schema for team data
  */
 export const TeamSchema = z.object({
+  id: z.string().uuid(),
   /**
    * Team name - minimum 2 characters
    */
@@ -17,7 +18,7 @@ export const TeamSchema = z.object({
   /**
    * Owner ID - numeric identifier for the team admin
    */
-  ownerId: z.number().int(), //Admin User
+  owner_id: z.string().uuid(), //Admin User
 });
 
 /**

@@ -1,10 +1,10 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+
 "use server";
 
 import { prisma } from "@/lib/prisma";
 import { getAdminSession } from "@/server/actions/admin-auth";
 import { z } from "zod";
-import { Plan, Role } from "@prisma/client";
+import { plan, role } from "@prisma/client";
 import { redirect } from "next/navigation";
 import { secureAction } from "@/lib/security";
 import { revalidatePath } from "next/cache";
@@ -21,7 +21,7 @@ const OnboardingSchema = z.object({
     .string()
     .min(2, "Team name is required")
     .max(100, "Team name too long"),
-  plan: z.nativeEnum(Plan),
+  plan: z.nativeEnum(plan),
 });
 
 // Admin Signup Schema - for new admin registration
@@ -33,7 +33,7 @@ const AdminSignupSchema = z.object({
     .string()
     .min(2, "Team name is required")
     .max(100, "Team name too long"),
-  plan: z.nativeEnum(Plan),
+  plan: z.nativeEnum(plan),
 });
 
 const SECRET_KEY = new TextEncoder().encode(
@@ -88,10 +88,6 @@ export async function finishOnboarding(
   }
 
   const userEmail = user.email.toLowerCase().trim();
-  const userName = (user.name || "Unit-01")
-    .replace(/<[^>]*>/g, "")
-    .trim()
-    .slice(0, 50);
 
   const rateLimit = checkRateLimit(
     `onboarding:${userEmail}`,
@@ -111,7 +107,6 @@ export async function finishOnboarding(
     return { success: false, error: parse.error.issues[0].message };
   }
 
-  const { teamName, plan } = parse.data;
 
   // 4. Check for existing user with team
   const existing = await prisma.user.findUnique({
@@ -120,76 +115,16 @@ export async function finishOnboarding(
       id: true,
       name: true,
       email: true,
-      teamId: true,
+      team_id: true,
     },
   });
 
-  if (existing && existing.teamId) {
+  if (existing && existing.team_id) {
     return { success: false, error: "Account already set up" };
   }
 
   try {
-    // 5. Create User and Team in transaction
-    const result = await prisma.$transaction(async (tx) => {
-      // Sanitize team name to prevent XSS/SQL injection
-      const sanitizedTeamName = teamName
-        .replace(/<[^>]*>/g, "") // Remove HTML tags
-        .trim()
-        .slice(0, 100); // Limit length
 
-      let userRecord;
-
-      if (existing) {
-        // Update existing user
-        userRecord = await tx.user.update({
-          where: { id: existing.id },
-          data: { role: Role.ADMIN },
-          select: { id: true, name: true, email: true },
-        });
-      } else {
-        // Create new user with sanitized data
-        userRecord = await tx.user.create({
-          data: {
-            name: userName,
-            email: userEmail,
-            role: Role.ADMIN,
-            password: "", // Not used for session auth
-            isBilling: plan === "FREE",
-            billingType: plan,
-          },
-          select: { id: true, name: true, email: true },
-        });
-      }
-
-      // Create team with sanitized name
-      const newTeam = await tx.team.create({
-        data: {
-          name: sanitizedTeamName,
-          ownerId: userRecord.id,
-        },
-        select: { id: true, name: true },
-      });
-
-      // Update user with team ID
-      await tx.user.update({
-        where: { id: userRecord.id },
-        data: { teamId: newTeam.id },
-      });
-
-      // Create billing record if not free plan
-      if (plan !== "FREE") {
-        await tx.billing.create({
-          data: {
-            teamId: newTeam.id,
-            plan: plan,
-            status: "ACTIVE",
-            startedAt: new Date(),
-          },
-        });
-      }
-
-      return { user: userRecord, team: newTeam };
-    });
 
     // 6. Clear cache and redirect
     revalidatePath("/");
@@ -221,7 +156,7 @@ export async function adminSignup(formData: z.infer<typeof AdminSignupSchema>) {
 
   // 3. Check if email already exists
   const existingUser = await prisma.user.findUnique({
-    where: { email: email.toLowerCase() },
+    where: { email },
   });
 
   if (existingUser) {
@@ -252,9 +187,9 @@ export async function adminSignup(formData: z.infer<typeof AdminSignupSchema>) {
           email: sanitizedEmail,
           username: sanitizedEmail.split("@")[0],
           password: hashedPassword,
-          role: Role.ADMIN,
-          isBilling: plan === "FREE",
-          billingType: plan,
+          role: role.ADMIN,
+          is_billing: plan === "FREE",
+          billing_type: plan,
         },
         select: { id: true, name: true, email: true },
       });
@@ -263,7 +198,7 @@ export async function adminSignup(formData: z.infer<typeof AdminSignupSchema>) {
       const newTeam = await tx.team.create({
         data: {
           name: sanitizedTeamName,
-          ownerId: adminUser.id,
+          owner_id: adminUser.id,
         },
         select: { id: true, name: true },
       });
@@ -271,17 +206,17 @@ export async function adminSignup(formData: z.infer<typeof AdminSignupSchema>) {
       // Update user with team ID
       await tx.user.update({
         where: { id: adminUser.id },
-        data: { teamId: newTeam.id },
+        data: { team_id: newTeam.id },
       });
 
       // Create billing record if not free plan
       if (plan !== "FREE") {
         await tx.billing.create({
           data: {
-            teamId: newTeam.id,
+            team_id: newTeam.id,
             plan: plan,
             status: "ACTIVE",
-            startedAt: new Date(),
+            started_at: new Date(),
           },
         });
       }
@@ -291,7 +226,7 @@ export async function adminSignup(formData: z.infer<typeof AdminSignupSchema>) {
 
     // 6. Generate admin session token
     const token = await new SignJWT({
-      userId: result.user.id,
+      user_id: result.user.id,
       role: "ADMIN",
       ip: "unknown",
     })

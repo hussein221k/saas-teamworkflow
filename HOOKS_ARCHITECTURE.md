@@ -6,7 +6,7 @@
 
 ```
 useChatChannels.ts (300+ lines)
-├── 18 useState declarations
+├── 18 use_state declarations
 ├── Mixed concerns (teams, channels, projects, employees)
 └── Difficult to read and maintain
 ```
@@ -40,10 +40,88 @@ hooks/
 │   ├── Form validation
 │   └── Form reset helpers
 │
-├── useChat.ts                  ← Chat messaging (existing)
-├── useTasks.ts                 ← Task management (existing)
+├── useChat.ts                  ← Chat messaging (TanStack Query)
+├── useTasks.ts                 ← Task management (TanStack Query)
+├── useUser.ts                  ← User session (TanStack Query)
+├── useTeam.ts                  ← Team data (TanStack Query)
+├── useBilling.ts               ← Billing data (TanStack Query)
 └── use-mobile.ts               ← Mobile detection (existing)
 ```
+
+---
+
+## 🔌 API Routes Architecture
+
+### Overview
+
+The application uses a layered architecture:
+
+```
+┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
+│   Page          │     │   Hook          │     │   API Route     │
+│  (Server)       │────▶│  (Client)       │────▶│  (Endpoint)      │
+└─────────────────┘     └─────────────────┘     └─────────────────┘
+         │                       │                       │
+         │                       │                       │
+         ▼                       ▼                       ▼
+   Direct Prisma           TanStack Query          Server Actions
+   or Server Actions       for dynamic data        or Prisma
+```
+
+### API Routes
+
+| Route | Method | Description |
+|-------|--------|-------------|
+| `/api/auth/session` | GET | Get current user session |
+| `/api/team` | GET | Get user's teams |
+| `/api/team/[teamId]` | GET | Get specific team with billing |
+| `/api/billing` | GET | Get billing info for user's team |
+| `/api/getsession` | GET | Get admin session |
+
+### TanStack Query Hooks
+
+All data-fetching hooks use TanStack Query with:
+- Automatic caching
+- Background refetching
+- Optimistic updates
+- Error handling
+
+#### useUser Hook
+```typescript
+import { useUser } from "@/hooks";
+
+function Header() {
+  const { user, isAdmin, isAuthenticated, isLoading } = useUser();
+  // Use user data...
+}
+```
+
+#### useTeam Hook
+```typescript
+import { useUserTeams, useTeam } from "@/hooks";
+
+function TeamList() {
+  const { teams, isLoading } = useUserTeams();
+  // Use teams...
+}
+
+function TeamDetails({ teamId }: { teamId: string }) {
+  const { team, isLoading } = useTeam(teamId);
+  // Use team data...
+}
+```
+
+#### useBilling Hook
+```typescript
+import { useBilling } from "@/hooks";
+
+function BillingInfo() {
+  const { billing, isLoading, upgradePlan, downgradePlan } = useBilling();
+  // Use billing data...
+}
+```
+
+---
 
 ## 📊 State Reduction Analysis
 
@@ -105,7 +183,7 @@ Every function has a JSDoc comment explaining:
 ```typescript
 import { useChatChannels } from "@/hooks";
 
-function ChatComponent({ userId, teamId, teams, isAdmin }) {
+function ChatComponent({ user_id, team_id, teams, isAdmin }) {
   const {
     // Team state
     newTeamName,
@@ -121,8 +199,8 @@ function ChatComponent({ userId, teamId, teams, isAdmin }) {
     channels,
     projects,
   } = useChatChannels({
-    userId,
-    currentTeamId: teamId,
+    user_id,
+    currentteam_id: team_id,
     initialTeams: teams,
     isAdmin,
   });
@@ -139,9 +217,9 @@ Sub-hooks can be used independently:
 // Use only team management in a different component
 import { useTeamManagement } from "@/hooks";
 
-function TeamSelector({ userId }) {
+function TeamSelector({ user_id }) {
   const { teams, newTeamName, setNewTeamName, resetTeamForm } =
-    useTeamManagement(userId);
+    useTeamManagement(user_id);
 
   // Component logic...
 }

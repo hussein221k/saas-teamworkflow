@@ -9,6 +9,7 @@ import z from "zod";
  * Validation schema for task comments
  */
 export const CommentSchema = z.object({
+  id:z.string().uuid(),
   /**
    * Comment content - required string with max 1000 characters
    */
@@ -17,12 +18,12 @@ export const CommentSchema = z.object({
   /**
    * ID of the task this comment belongs to
    */
-  taskId: z.number().int(),
+  task_id: z.string(),
 
   /**
    * ID of the user who created the comment
    */
-  userId: z.number().int(),
+  user_id: z.string(),
 });
 
 /**

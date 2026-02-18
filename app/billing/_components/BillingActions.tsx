@@ -6,13 +6,19 @@ import { upgradePlan } from "@/server/actions/billing";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner"; // Assuming sonner or use standard toast if available
 
-export default function BillingActions({ teamId, currentPlan }: { teamId: number; currentPlan: string }) {
+export default function BillingActions({
+  team_id,
+  currentPlan,
+}: {
+  team_id?: string;
+  currentPlan: string;
+}) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
 
   const handleUpgrade = async () => {
     setLoading(true);
-    const result = await upgradePlan(teamId);
+    const result = await upgradePlan(team_id);
     setLoading(false);
     if (result.success) {
       toast.success("Upgraded to Pro!");
@@ -22,9 +28,9 @@ export default function BillingActions({ teamId, currentPlan }: { teamId: number
     }
   };
 
- /* const handleDowngrade = async () => {
+  /* const handleDowngrade = async () => {
     setLoading(true);
-    const result = await downgradePlan(teamId);
+    const result = await downgradePlan(team_id);
     setLoading(false);
     if (result.success) {
       toast.success("Downgraded to Free.");

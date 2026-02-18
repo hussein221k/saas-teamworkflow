@@ -10,11 +10,16 @@ export function useEmployeeManagement() {
   // ============================================================================
   // STATE - Employee Form Fields
   // ============================================================================
-  const [empName, setEmpName] = useState("");
-  const [empUsername, setEmpUsername] = useState("");
-  const [empCode, setEmpCode] = useState("");
-  const [empPass, setEmpPass] = useState("");
-  const [isCreatingEmp, setIsCreatingEmp] = useState(false);
+  const [state, setState] = useState({
+    empName: "",
+    empUsername: "",
+    empCode: "",
+    empPass: "",
+    isCreatingEmp: false,
+  });
+
+  const updateState = (updates: Partial<typeof state>) =>
+    setState((prev) => ({ ...prev, ...updates }));
 
   // ============================================================================
   // ACTIONS - Employee Operations
@@ -24,11 +29,13 @@ export function useEmployeeManagement() {
    * Reset employee creation form
    */
   const resetEmployeeForm = useCallback(() => {
-    setEmpName("");
-    setEmpUsername("");
-    setEmpCode("");
-    setEmpPass("");
-    setIsCreatingEmp(false);
+    updateState({
+      empName: "",
+      empUsername: "",
+      empCode: "",
+      empPass: "",
+      isCreatingEmp: false,
+    });
   }, []);
 
   /**
@@ -36,24 +43,30 @@ export function useEmployeeManagement() {
    * @returns true if all required fields are filled
    */
   const validateEmployeeForm = useCallback(() => {
-    return empName.trim() && empUsername.trim() && empCode.trim() && empPass.trim();
-  }, [empName, empUsername, empCode, empPass]);
+    return (
+      state.empName.trim() &&
+      state.empUsername.trim() &&
+      state.empCode.trim() &&
+      state.empPass.trim()
+    );
+  }, [state.empName, state.empUsername, state.empCode, state.empPass]);
 
   return {
     // State
-    empName,
-    setEmpName,
-    empUsername,
-    setEmpUsername,
-    empCode,
-    setEmpCode,
-    empPass,
-    setEmpPass,
-    isCreatingEmp,
-    setIsCreatingEmp,
-    
+    empName: state.empName,
+    setEmpName: (val: string) => updateState({ empName: val }),
+    empUsername: state.empUsername,
+    setEmpUsername: (val: string) => updateState({ empUsername: val }),
+    empCode: state.empCode,
+    setEmpCode: (val: string) => updateState({ empCode: val }),
+    empPass: state.empPass,
+    setEmpPass: (val: string) => updateState({ empPass: val }),
+    isCreatingEmp: state.isCreatingEmp,
+    setIsCreatingEmp: (val: boolean) => updateState({ isCreatingEmp: val }),
+
     // Helpers
     resetEmployeeForm,
     validateEmployeeForm,
+    updateState,
   };
 }

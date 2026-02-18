@@ -4,7 +4,7 @@
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import { getAdminSession } from "@/server/actions/admin-auth";
-import { Role } from "@prisma/client";
+import { role } from "@prisma/client";
 import { CreateEmployeeSchema, CreateEmployee } from "@/schema/UserSchema";
 import { revalidatePath } from "next/cache";
 
@@ -20,12 +20,12 @@ export async function createEmployee(data: CreateEmployee) {
     where: { email: sessionUser.email },
   });
 
-  if (!adminUser || adminUser.role !== Role.ADMIN) {
+  if (!adminUser || adminUser.role !== role.ADMIN) {
     return { success: false, error: "Only admins can create employees." };
   }
 
   // Check if admin has a team
-  if (!adminUser.teamId) {
+  if (!adminUser.team_id) {
     return { success: false, error: "Admin must have a team first." };
   }
 
@@ -34,12 +34,12 @@ export async function createEmployee(data: CreateEmployee) {
     return { success: false, error: parse.error.issues[0].message };
   }
 
-  const { name, username, employeeCode, password } = parse.data;
+  const { name, username, employee_code, password } = parse.data;
 
   // Check unique constraints
   const existing = await prisma.user.findFirst({
     where: {
-      OR: [{ username }, { employeeCode }],
+      OR: [{ username }, { employee_code }],
     },
   });
 
@@ -57,14 +57,14 @@ export async function createEmployee(data: CreateEmployee) {
       data: {
         name,
         username,
-        employeeCode,
+        employee_code,
         password: hashedPassword,
-        role: Role.EMPLOYEE,
-        teamId: adminUser.teamId, // Assign to Admin's team by default
-        createdById: adminUser.id,
-        isBilling: false,
-        billingDay: null,
-        billingFinish: null,
+        role: role.EMPLOYEE,
+        team_id: adminUser.team_id, // Assign to Admin's team by default
+        created_by_id: adminUser.id,
+        is_billing: false,
+        billing_day: null,
+        billing_finish: null,
 
         // email is optional now
       },
@@ -77,7 +77,45 @@ export async function createEmployee(data: CreateEmployee) {
   }
 }
 
-export async function deleteEmployee(employeeId: number) {
+export async function provisionGhostUsers(team_id: string, names: string[]) {
+  const sessionUser = await getAdminSession();
+  if (!sessionUser || !sessionUser.email) {
+    return { success: false, error: "Unauthorized access" };
+  }
+
+  const results = [];
+  const hashedPassword = await bcrypt.hash("ghost_protocol_12345", 10);
+
+  for (const name of names) {
+    const cleanName = name.trim();
+    if (!cleanName) continue;
+
+    const username = `ghost_${cleanName.toLowerCase().replace(/\s+/g, "_")}_${Math.random().toString(36).substring(2, 5)}`;
+    const employee_code = `EN-GP-${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
+
+    try {
+      await prisma.user.create({
+        data: {
+          name: cleanName,
+          username,
+          employee_code,
+          password: hashedPassword,
+          role: role.EMPLOYEE,
+          team_id: team_id,
+          is_billing: false,
+        },
+      });
+      results.push(cleanName);
+    } catch (e) {
+      console.error(`Failed to provision ghost: ${cleanName}`, e);
+    }
+  }
+
+  revalidatePath("/dashboard");
+  return { success: true, provisioned: results };
+}
+
+export async function deleteEmployee(employeeId: string) {
   const sessionUser = await getAdminSession();
 
   if (!sessionUser || !sessionUser.email) {
@@ -88,12 +126,12 @@ export async function deleteEmployee(employeeId: number) {
     where: { email: sessionUser.email },
   });
 
-  if (!adminUser || adminUser.role !== Role.ADMIN) {
+  if (!adminUser || adminUser.role !== role.ADMIN) {
     return { success: false, error: "System access denied." };
   }
 
   // Check if admin has a team
-  if (!adminUser.teamId) {
+  if (!adminUser.team_id) {
     return { success: false, error: "Admin must have a team first." };
   }
 
@@ -101,8 +139,8 @@ export async function deleteEmployee(employeeId: number) {
     await prisma.user.deleteMany({
       where: {
         id: employeeId,
-        teamId: adminUser.teamId,
-        role: Role.EMPLOYEE,
+        team_id: adminUser.team_id,
+        role: role.EMPLOYEE,
       },
     });
 

@@ -10,8 +10,13 @@ export function useChannelManagement() {
   // ============================================================================
   // STATE - Channel Management
   // ============================================================================
-  const [activeSheet, setActiveSheet] = useState(false);
-  const [newGroupName, setNewGroupName] = useState("");
+  const [state, setState] = useState({
+    activeSheet: false,
+    newGroupName: "",
+  });
+
+  const updateState = (updates: Partial<typeof state>) =>
+    setState((prev) => ({ ...prev, ...updates }));
 
   // ============================================================================
   // ACTIONS - Channel Operations
@@ -21,16 +26,15 @@ export function useChannelManagement() {
    * Reset channel creation form
    */
   const resetChannelForm = useCallback(() => {
-    setNewGroupName("");
-    setActiveSheet(false);
+    updateState({ newGroupName: "", activeSheet: false });
   }, []);
 
   return {
     // State
-    activeSheet,
-    setActiveSheet,
-    newGroupName,
-    setNewGroupName,
+    activeSheet: state.activeSheet,
+    setActiveSheet: (val: boolean) => updateState({ activeSheet: val }),
+    newGroupName: state.newGroupName,
+    setNewGroupName: (name: string) => updateState({ newGroupName: name }),
 
     // Helpers
     resetChannelForm,

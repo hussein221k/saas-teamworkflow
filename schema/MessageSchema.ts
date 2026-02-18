@@ -14,18 +14,18 @@ export const MessageSchema = z.object({
    */
   content: z.string().min(1, "Message content cannot be empty"),
 
-  userId: z.number(),
-  createdAt: z.date(),
+  user_id: z.string().optional(),
+  created_at: z.date().optional(),
   /**
    * Team ID - must be a positive integer
    */
-  teamId: z.number().int().positive("Team ID must be a valid number"),
-  id: z.number(),
-  channelId: z.number().nullable(),
+  team_id: z.string(),
+  id: z.string().optional(),
+  channel_id: z.string().optional().nullable(),
   user: z
     .object({
-      name: z.string().nullable(),
-      email: z.string().nullable(),
+      name: z.string(),
+      email: z.string().optional(),
     })
     .optional(),
 });

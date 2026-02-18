@@ -9,6 +9,7 @@ import { z } from "zod";
  * Validation schema for user data
  */
 export const UserSchema = z.object({
+  id: z.string().min(3),
   /**
    * User name - between 3 and 20 characters
    */
@@ -32,19 +33,19 @@ export const UserSchema = z.object({
   /**
    * Team ID - optional numeric identifier
    */
-  teamId: z.number().int().optional(),
+  team_id: z.string().optional(),
 
   /**
    * Creation date
    */
-  createAt: z.date(),
+  created_at: z.date(),
 
   //Billing
 
-  isBilling: z.boolean(),
-  billingType: z.enum(["FREE" , "PRO" , "ENTERPRISE"]),
-  billingDay: z.date().optional(),
-  billingFinish: z.date().optional()
+  is_billing: z.boolean(),
+  billing_type: z.enum(["FREE", "PRO", "ENTERPRISE"]),
+  billing_day: z.date().optional(),
+  billing_finish: z.date().optional(),
 });
 
 /**
@@ -66,7 +67,7 @@ export const CreateEmployeeSchema = z.object({
   /** Unique username */
   username: z.string().min(3).max(30),
   /** Unique employee code */
-  employeeCode: z.string().min(1),
+  employee_code: z.string().min(1),
   /** Password - minimum 8 characters */
   password: z.string().min(8),
 });
@@ -74,4 +75,11 @@ export const CreateEmployeeSchema = z.object({
 /**
  * Inferred TypeScript type from CreateEmployeeSchema
  */
+export type Session = {
+  id: string;
+  role: string;
+  name: string;
+  team_id: string;
+  email: string;
+};
 export type CreateEmployee = z.infer<typeof CreateEmployeeSchema>;

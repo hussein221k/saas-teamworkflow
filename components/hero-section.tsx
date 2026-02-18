@@ -123,7 +123,7 @@ export default function HeroSection() {
                   speedSegment={0.3}
                   delay={0.5}
                   as="p"
-                  className="mx-auto mt-8 max-w-2xl text-balance text-lg text-zinc-400 font-medium"
+                  className="mx-auto mt-8 max-w-2xl text-balance text-lg text-muted-foreground font-medium"
                 >
                   Highly customizable tactical clusters for building modern
                   enterprises. Orchestrate your team with the precision and

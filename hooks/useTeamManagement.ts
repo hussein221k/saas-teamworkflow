@@ -11,16 +11,24 @@ export function useTeamManagement() {
   // STATE - Team Management
   // ============================================================================
   const [teams, setTeams] = useState<
-    { id: number; name: string; ownerId?: number; inviteCode?: string | null }[]
+    {
+      id: string;
+      name: string;
+      owner_id?: string;
+      inviteCode?: string | null;
+    }[]
   >([]);
-  const [newTeamName, setNewTeamName] = useState("");
-  const [isCreating, setIsCreating] = useState(false);
-  const [isSheetOpen, setIsSheetOpen] = useState(false);
+  const [formState, setFormState] = useState({
+    newTeamName: "",
+    isCreating: false,
+    isSheetOpen: false,
+    activeSheet: false,
+    joinCodeInput: "",
+    isJoining: false,
+  });
 
-  // Join team state
-  const [activeSheet, setactiveSheet] = useState(false);
-  const [joinCodeInput, setJoinCodeInput] = useState("");
-  const [isJoining, setIsJoining] = useState(false);
+  const updateForm = (updates: Partial<typeof formState>) =>
+    setFormState((prev) => ({ ...prev, ...updates }));
 
   // ============================================================================
   // ACTIONS - Team Operations
@@ -30,37 +38,36 @@ export function useTeamManagement() {
    * Reset team creation form
    */
   const resetTeamForm = useCallback(() => {
-    setNewTeamName("");
-    setIsSheetOpen(false);
+    updateForm({ newTeamName: "", isSheetOpen: false });
   }, []);
 
   /**
    * Reset join team form
    */
   const resetJoinForm = useCallback(() => {
-    setJoinCodeInput("");
-    setactiveSheet(false);
+    updateForm({ joinCodeInput: "", activeSheet: false });
   }, []);
 
   return {
     // State
     teams,
     setTeams,
-    newTeamName,
-    setNewTeamName,
-    isCreating,
-    setIsCreating,
-    isSheetOpen,
-    setIsSheetOpen,
-    activeSheet,
-    setactiveSheet,
-    joinCodeInput,
-    setJoinCodeInput,
-    isJoining,
-    setIsJoining,
+    newTeamName: formState.newTeamName,
+    setNewTeamName: (name: string) => updateForm({ newTeamName: name }),
+    isCreating: formState.isCreating,
+    setIsCreating: (val: boolean) => updateForm({ isCreating: val }),
+    isSheetOpen: formState.isSheetOpen,
+    setIsSheetOpen: (val: boolean) => updateForm({ isSheetOpen: val }),
+    activeSheet: formState.activeSheet,
+    setactiveSheet: (val: boolean) => updateForm({ activeSheet: val }),
+    joinCodeInput: formState.joinCodeInput,
+    setJoinCodeInput: (val: string) => updateForm({ joinCodeInput: val }),
+    isJoining: formState.isJoining,
+    setIsJoining: (val: boolean) => updateForm({ isJoining: val }),
 
     // Helpers
     resetTeamForm,
     resetJoinForm,
+    updateForm,
   };
 }

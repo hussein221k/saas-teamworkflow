@@ -2,28 +2,17 @@
 import { cookies } from "next/headers";
 import { jwtVerify } from "jose";
 import { prisma } from "@/lib/prisma";
+import { Session } from "@/schema/UserSchema";
 
 const SECRET_KEY = new TextEncoder().encode(
   process.env.JWT_SECRET || "default_secret_key",
 );
 
 // ============================================================================
-// TYPES
-// ============================================================================
-
-export type SessionUser = {
-  id: number;
-  name: string;
-  email: string;
-  role: string;
-  teamId: number | null;
-};
-
-// ============================================================================
 // FUNCTIONS
 // ============================================================================
 
-export async function getSession(): Promise<SessionUser | null> {
+export async function getSession(): Promise<Session | null> {
   try {
     const cookieStore = await cookies();
     const session = cookieStore.get("employee_session");
@@ -43,13 +32,13 @@ export async function getSession(): Promise<SessionUser | null> {
 
     // Fetch user from database
     const user = await prisma.user.findUnique({
-      where: { id: payload.userId as number },
+      where: { id: payload.user_id as string },
       select: {
         id: true,
         name: true,
         email: true,
         role: true,
-        teamId: true,
+        team_id: true,
       },
     });
 
@@ -62,7 +51,7 @@ export async function getSession(): Promise<SessionUser | null> {
       name: user.name,
       email: user.email || "",
       role: user.role,
-      teamId: user.teamId,
+      team_id: user.team_id || "",
     };
   } catch (error) {
     // Invalid token or other error
@@ -70,7 +59,7 @@ export async function getSession(): Promise<SessionUser | null> {
   }
 }
 
-export async function requireAuth(): Promise<SessionUser> {
+export async function requireAuth(): Promise<Session> {
   const user = await getSession();
   if (!user) {
     throw new Error("Unauthorized");

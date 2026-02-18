@@ -8,22 +8,32 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { ActiveSheet } from "./Chatchannels";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface ChannelSidebarProps {
   activeSheet: ActiveSheet | undefined;
-  activeChannelId: number | null;
-  channels: { id: number; name: string }[];
-  members: { id: number; name: string; role: string }[];
-  navigateToChannel: (id: number | null) => void;
+  activeChannelId: string | null;
+  activeReceiverId: string | null;
+  channels: { id: string; name: string }[];
+  members: { id: string; name: string; role: string }[];
+  navigateToChannel: (id: string | null) => void;
+  navigateToMember: (id: string) => void;
   setActiveSheet: (activeSheet: ActiveSheet | undefined) => void;
   isAdmin: boolean;
 }
 
 export function ChannelSidebar({
   activeChannelId,
+  activeReceiverId,
   channels,
   members,
   navigateToChannel,
+  navigateToMember,
   setActiveSheet,
   isAdmin,
 }: ChannelSidebarProps) {
@@ -38,14 +48,23 @@ export function ChannelSidebar({
             Battle Groups
           </span>
           {isAdmin && (
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-6 w-6 hover:bg-white/5"
-              onClick={() => setActiveSheet(ActiveSheet.group)}
-            >
-              <Plus className="w-3 h-3 text-primary" />
-            </Button>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6 hover:bg-white/5"
+                    onClick={() => setActiveSheet(ActiveSheet.group)}
+                  >
+                    <Plus className="w-3 h-3 text-primary" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="right" className="bg-zinc-900 border-white/10 text-[10px] font-bold uppercase tracking-widest text-primary">
+                  Create Group
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           )}
         </div>
       </div>
@@ -91,7 +110,13 @@ export function ChannelSidebar({
             {members.map((m) => (
               <div
                 key={m.id}
-                className="flex items-center gap-3 opacity-60 hover:opacity-100 transition-opacity"
+                onClick={() => navigateToMember(m.id)}
+                className={cn(
+                  "flex items-center gap-3 p-2 rounded-xl cursor-pointer transition-all",
+                  activeReceiverId === m.id
+                    ? "bg-primary/10 border border-primary/20 opacity-100"
+                    : "opacity-60 hover:opacity-100 hover:bg-white/5",
+                )}
               >
                 <Avatar className="w-6 h-6 border border-white/5">
                   <AvatarFallback className="bg-zinc-900 text-[8px] font-black uppercase">
@@ -101,6 +126,12 @@ export function ChannelSidebar({
                 <span className="text-[10px] font-bold text-zinc-400 capitalize">
                   {m.name}
                 </span>
+                <Badge
+                  variant="outline"
+                  className="text-[7px] h-3 px-1 border-zinc-500/20 text-zinc-500 uppercase"
+                >
+                  ENC
+                </Badge>
                 {m.role === "ADMIN" && (
                   <Badge
                     variant="outline"

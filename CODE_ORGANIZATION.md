@@ -17,9 +17,9 @@ hooks/
 ### **What Was Fixed**
 
 1. **Function Signature Mismatches** ✅
-   - `createProject`: Now accepts `{ name, teamId }` object
+   - `createProject`: Now accepts `{ name, team_id }` object
    - `createEmployee`: Now accepts `{ name, username, employeeCode, password }` object
-   - `removeMemberFromTeam`: Fixed parameter order to `(memberId, teamId)`
+   - `removeMemberFromTeam`: Fixed parameter order to `(memberId, team_id)`
    - `generateTeamInvite`: Returns `code` instead of `inviteCode`
 
 2. **Eliminated Duplication** ✅
@@ -77,22 +77,22 @@ components/dashboard/
 
 ### Team Actions
 
-- `createTeam(name: string, ownerId: number)`
-- `switchTeam(userId: number, teamId: number)`
-- `getTeamMembers(teamId: number)`
-- `generateTeamInvite(teamId: number)` → returns `{ success, code }`
-- `joinTeamByCode(userId: number, code: string)`
-- `removeMemberFromTeam(memberId: number, teamId: number)`
+- `createTeam(name: string, owner_id: number)`
+- `switchTeam(user_id: number, team_id: number)`
+- `getTeamMembers(team_id: number)`
+- `generateTeamInvite(team_id: number)` → returns `{ success, code }`
+- `joinTeamByCode(user_id: number, code: string)`
+- `removeMemberFromTeam(memberId: number, team_id: number)`
 
 ### Channel Actions
 
-- `createChannel(teamId: number, name: string)`
-- `getTeamChannels(teamId: number)`
+- `createChannel(team_id: number, name: string)`
+- `getTeamChannels(team_id: number)`
 
 ### Project Actions
 
-- `createProject({ name: string, teamId: number })`
-- `getTeamProjects(teamId: number)`
+- `createProject({ name: string, team_id: number })`
+- `getTeamProjects(team_id: number)`
 - `deleteProject(projectId: number)`
 
 ### Employee Actions
@@ -102,11 +102,11 @@ components/dashboard/
 
 ### Task Actions
 
-- `getTeamTasks(teamId: number)`
-- `createTask(teamId: number, data: TaskInput)`
+- `getTeamTasks(team_id: number)`
+- `createTask(team_id: number, data: TaskInput)`
 - `updateTaskStatus(taskId: number, status: TaskStatus)`
 
 ### Chat Actions
 
-- `getTeamMessages(teamId: number, channelId?: number)`
-- `sendMessage(teamId: number, content: string, channelId?: number)`
+- `getTeamMessages(team_id: number, channel_id?: number)`
+- `sendMessage(team_id: number, content: string, channel_id?: number)`

@@ -1,7 +1,7 @@
 /**
  * Hooks Index
  * Central export point for all custom React hooks
- * 
+ *
  * Organization:
  * - Dashboard hooks: Chat, tasks, channels management
  * - Utility hooks: Mobile detection, etc.
@@ -16,7 +16,6 @@
  * Combines team, channel, project, and employee management
  */
 export { useChatChannels } from "./useChatChannels";
-export type { UseChatChannelsProps } from "./useChatChannels";
 
 /**
  * Chat messaging functionality
@@ -31,14 +30,44 @@ export { useChat } from "./useChat";
 export { useTasks } from "./useTasks";
 
 // ============================================================================
-// SUB-HOOKS - Focused state management
+// USER & SESSION HOOKS
 // ============================================================================
+
+/**
+ * User session management
+ * Fetches and manages current user session data
+ */
+export { useUser, useUserById } from "./useUser";
+
+// ============================================================================
+// TEAM HOOKS
+// ============================================================================
+
+/**
+ * Team data management
+ * Fetches teams and team details via API routes
+ */
+export { useUserTeams, useTeam, useCurrentTeam } from "./useTeam";
 
 /**
  * Team management state
  * Team creation, switching, and invite codes
  */
 export { useTeamManagement } from "./useTeamManagement";
+
+// ============================================================================
+// BILLING HOOKS
+// ============================================================================
+
+/**
+ * Billing information management
+ * Fetches and manages billing data via API routes
+ */
+export { useBilling, useBillingByTeamId } from "./useBilling";
+
+// ============================================================================
+// SUB-HOOKS - Focused state management
+// ============================================================================
 
 /**
  * Channel management state

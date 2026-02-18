@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
-import { loginEmployee } from "@/server/actions/employee-auth";
+import { loginEmployee, getSession } from "@/server/actions/employee-auth";
 import gsap from "gsap";
 import { Loader2, Lock, Mail, User, ArrowRight, Sparkles } from "lucide-react";
 
@@ -15,8 +15,24 @@ export default function EmployeeLoginPage() {
   const [username, setUsername] = useState("");
   const [employeeCode, setEmployeeCode] = useState("");
   const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true); // Start with true to show loading
   const router = useRouter();
+
+  // Check for existing session on mount
+  useEffect(() => {
+    const checkSession = async () => {
+      const session = await getSession();
+      if (session) {
+        // Already logged in, redirect to dashboard
+        router.push(
+          session.team_id ? `/dashboard/${session.team_id}` : "/onboarding",
+        );
+      } else {
+        setLoading(false);
+      }
+    };
+    checkSession();
+  }, [router]);
 
   // Refs for GSAP animations
   const containerRef = useRef<HTMLDivElement>(null);
@@ -123,7 +139,8 @@ export default function EmployeeLoginPage() {
           onComplete: () => {
             toast.success("Welcome back!");
             router.refresh();
-            router.push("/dashboard");
+            const targetUrl = result.redirectUrl || "/dashboard";
+            router.push(targetUrl);
           },
         });
       } else {
@@ -143,6 +160,15 @@ export default function EmployeeLoginPage() {
       setLoading(false);
     }
   };
+
+  // Show loading while checking session
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div

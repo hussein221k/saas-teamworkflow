@@ -10,8 +10,13 @@ export function useProjectManagement() {
   // ============================================================================
   // STATE - Project Management
   // ============================================================================
-  const [newProjectName, setNewProjectName] = useState("");
-  const [isCreatingProject, setIsCreatingProject] = useState(false);
+  const [state, setState] = useState({
+    newProjectName: "",
+    isCreatingProject: false,
+  });
+
+  const updateState = (updates: Partial<typeof state>) =>
+    setState((prev) => ({ ...prev, ...updates }));
 
   // ============================================================================
   // ACTIONS - Project Operations
@@ -21,16 +26,15 @@ export function useProjectManagement() {
    * Reset project creation form
    */
   const resetProjectForm = useCallback(() => {
-    setNewProjectName("");
-    setIsCreatingProject(false);
+    updateState({ newProjectName: "", isCreatingProject: false });
   }, []);
 
   return {
     // State
-    newProjectName,
-    setNewProjectName,
-    isCreatingProject,
-    setIsCreatingProject,
+    newProjectName: state.newProjectName,
+    setNewProjectName: (name: string) => updateState({ newProjectName: name }),
+    isCreatingProject: state.isCreatingProject,
+    setIsCreatingProject: (val: boolean) => updateState({ isCreatingProject: val }),
     
     // Helpers
     resetProjectForm,

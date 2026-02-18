@@ -14,32 +14,15 @@ import { Button } from "@/components/ui/button";
 import { ArrowRight, Zap, Shield, Sparkles } from "lucide-react";
 import Link from "next/link";
 import BillingActions from "./_components/BillingActions";
+import { User } from "@/schema/UserSchema";
 
-interface PricingPlanProps {
-  dbUser: {
-    id: number;
-    name: string;
-    email: string | null;
-    teamId: number | null;
-  } | null;
-  team:
-    | {
-        id: number;
-        name: string;
-        ownerId: number;
-      }
-    | null
-    | undefined;
-  isOwner: boolean;
-  currentPlan: string;
-}
 
 export default function PricingPageClient({
-  dbUser,
-  team,
-  isOwner,
-  currentPlan,
-}: PricingPlanProps) {
+  id,
+  team_id,
+  role,
+  billing_type,
+}: User) {
   const cardsRef = useRef<HTMLDivElement[]>([]);
   const headerRef = useRef(null);
 
@@ -240,7 +223,7 @@ export default function PricingPageClient({
                 </CardContent>
 
                 <CardFooter className="p-10 pt-0">
-                  {plan.planKey === currentPlan ? (
+                  {plan.planKey === billing_type ? (
                     <div className="w-full p-4 rounded-2xl bg-white/5 border border-white/5 text-center">
                       <span className="text-[10px] font-black uppercase tracking-[0.4em] text-zinc-500 italic">
                         Core Protocol Active
@@ -252,11 +235,13 @@ export default function PricingPageClient({
                         No Modification Required
                       </span>
                     </div>
-                  ) : dbUser && isOwner && team ? (
+                  ) : id && role == "ADMIN" ? (
+                    true
+                  ) : false && team_id ? (
                     <div className="w-full">
                       <BillingActions
-                        teamId={team!.id}
-                        currentPlan={currentPlan}
+                        team_id={team_id}
+                        currentPlan={billing_type}
                       />
                     </div>
                   ) : (
@@ -265,7 +250,7 @@ export default function PricingPageClient({
                       className="w-full h-14 rounded-2xl group text-[10px] font-black uppercase tracking-[0.3em] shadow-xl shadow-primary/10 transition-all hover:scale-[1.02] active:scale-95"
                       variant={plan.variant}
                     >
-                      <Link href={dbUser ? "/onboarding" : "/api/auth/login"}>
+                      <Link href={id ? "/onboarding" : "/api/auth/login"}>
                         {plan.cta}
                         <ArrowRight className="ml-3 h-4 w-4 group-hover:translate-x-1 transition-transform" />
                       </Link>

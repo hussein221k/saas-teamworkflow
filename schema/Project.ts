@@ -19,7 +19,7 @@ export const ProjectSchema = z.object({
   /**
    * Team ID - numeric identifier
    */
-  teamId: z.number(),
+  team_id: z.string(),
 });
 
 /**

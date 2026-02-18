@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
+
 import { NextResponse } from "next/server";
 import { jwtVerify } from "jose";
 import { prisma } from "@/lib/prisma";
@@ -31,7 +31,7 @@ export async function GET() {
 
     // Fetch user from database
     const user = await prisma.user.findUnique({
-      where: { id: payload.userId as number },
+      where: { id: payload.user_id as string },
       select: {
         id: true,
         name: true,
@@ -46,6 +46,6 @@ export async function GET() {
 
     return NextResponse.json({ user, isAdmin });
   } catch (error) {
-    return NextResponse.json({ user: null });
+    return NextResponse.json({ user: null , error: error });
   }
 }

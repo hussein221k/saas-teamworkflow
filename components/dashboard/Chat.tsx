@@ -12,6 +12,8 @@ import {
   MoreVertical,
   Paperclip,
   Smile,
+  Brain,
+  MessageSquare,
 } from "lucide-react";
 import React, {
   useState,
@@ -30,19 +32,21 @@ import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { useSearchParams } from "next/navigation";
 
-
 interface ChatProps {
-  teamId: number;
-  currentUserId: number;
+  team_id: string;
+  currentuser_id: string;
 }
 
-function Chat({ teamId, currentUserId }: ChatProps) {
+function Chat({ team_id, currentuser_id }: ChatProps) {
   const searchParams = useSearchParams();
-  const channelId = searchParams.get("channelId")
-    ? Number(searchParams.get("channelId"))
-    : undefined;
+  const channel_id = searchParams.get("channel_id");
+  const receiver_id = searchParams.get("receiver_id");
 
-  const { messages, loading, send, isSending } = useChat(teamId, channelId);
+  const { messages, loading, send, isSending } = useChat(
+    team_id,
+    channel_id,
+    receiver_id,
+  );
   const [inputValue, setInputValue] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -84,7 +88,7 @@ function Chat({ teamId, currentUserId }: ChatProps) {
   const messageList = useMemo(() => {
     if (messages.length === 0) return null;
     return messages.map((msg) => {
-      const isMe = msg.userId === currentUserId;
+      const isMe = msg.user_id === currentuser_id;
       return (
         <div
           key={msg.id}
@@ -111,7 +115,7 @@ function Chat({ teamId, currentUserId }: ChatProps) {
                     {msg.user?.name}
                   </span>
                   <span className="text-[9px] text-zinc-600 font-medium">
-                    {format(new Date(msg.createdAt), "HH:mm")}
+                    {format(new Date(msg.created_at || new Date()), "HH:mm")}
                   </span>
                 </div>
                 <div
@@ -130,7 +134,7 @@ function Chat({ teamId, currentUserId }: ChatProps) {
         </div>
       );
     });
-  }, [messages, currentUserId]);
+  }, [messages, currentuser_id]);
 
   return (
     <div className="flex flex-col h-full w-full bg-zinc-950 border-r border-white/5 overflow-hidden">
@@ -138,11 +142,19 @@ function Chat({ teamId, currentUserId }: ChatProps) {
       <header className="p-4 border-b border-white/10 bg-zinc-900/50 backdrop-blur-md flex items-center justify-between z-10">
         <div className="flex items-center gap-3">
           <div className="bg-primary/10 p-2 rounded-xl">
-            <Hash className="w-5 h-5 text-primary" />
+            {receiver_id ? (
+              <MessageSquare className="w-5 h-5 text-primary" />
+            ) : (
+              <Hash className="w-5 h-5 text-primary" />
+            )}
           </div>
           <div>
             <h2 className="text-sm font-bold text-zinc-100 flex items-center gap-2 uppercase tracking-widest italic">
-              {channelId ? `Group Node ${channelId}` : "Global Neural Uplink"}
+              {receiver_id
+                ? "Direct Neural Terminal"
+                : channel_id
+                  ? `Group Node`
+                  : "Global Neural Uplink"}
               <Badge
                 variant="outline"
                 className="text-[9px] h-4 border-emerald-500/50 text-emerald-500 bg-emerald-500/5 px-1.5 uppercase tracking-tighter"
@@ -156,6 +168,14 @@ function Chat({ teamId, currentUserId }: ChatProps) {
           </div>
         </div>
         <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => window.dispatchEvent(new CustomEvent("toggle-ai-chat"))}
+            className="h-8 w-8 text-primary hover:text-primary hover:bg-primary/10 bg-primary/5 border border-primary/20"
+          >
+            <Brain className="w-4 h-4" />
+          </Button>
           <Button
             variant="ghost"
             size="icon"

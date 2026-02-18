@@ -4,12 +4,12 @@
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 
-export async function createChannel(teamId: number, name: string) {
+export async function createChannel(team_id: string, name: string) {
   try {
     const channel = await prisma.channel.create({
       data: {
         name,
-        teamId,
+        team_id,
       },
     });
     revalidatePath("/dashboard");
@@ -20,11 +20,11 @@ export async function createChannel(teamId: number, name: string) {
   }
 }
 
-export async function getTeamChannels(teamId: number) {
+export async function getTeamChannels(team_id: string) {
   try {
     const channels = await prisma.channel.findMany({
-      where: { teamId },
-      orderBy: { createdAt: "asc" },
+      where: { team_id },
+      orderBy: { created_at: "asc" },
     });
     return { success: true, channels };
   } catch (error) {
@@ -33,10 +33,10 @@ export async function getTeamChannels(teamId: number) {
   }
 }
 
-export async function deleteChannel(channelId: number) {
+export async function deleteChannel(channel_id: string) {
   try {
     await prisma.channel.delete({
-      where: { id: channelId },
+      where: { id: channel_id },
     });
     revalidatePath("/dashboard");
     return { success: true };

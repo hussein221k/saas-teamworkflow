@@ -15,11 +15,15 @@ import { useCallback } from "react";
  * Manages chat messaging functionality for a team channel.
  * Handles message fetching, sending, and real-time updates.
  *
- * @param teamId - The ID of the team
- * @param channelId - Optional channel ID for channel-specific messages
+ * @param team_id - The ID of the team
+ * @param channel_id - Optional channel ID for channel-specific messages
  * @returns Object with messages, loading states, and send function
  */
-export function useChat(teamId: number, channelId?: number) {
+export function useChat(
+  team_id: string,
+  channel_id?: string | null,
+  receiver_id?: string | null,
+) {
   const queryClient = useQueryClient();
 
   // 🔹 Fetch Messages with cache
@@ -28,9 +32,13 @@ export function useChat(teamId: number, channelId?: number) {
     isLoading,
     refetch,
   } = useQuery({
-    queryKey: ["chat", teamId, channelId],
+    queryKey: ["chat", team_id, channel_id, receiver_id],
     queryFn: async () => {
-      const result = (await getTeamMessages(teamId, channelId)) as unknown as {
+      const result = (await getTeamMessages(
+        team_id,
+        channel_id ?? undefined,
+        receiver_id ?? undefined,
+      )) as unknown as {
         success: boolean;
         messages?: Message[];
         error?: string;
@@ -40,17 +48,23 @@ export function useChat(teamId: number, channelId?: number) {
       }
       throw new Error(result.error || "Uplink synchronization failed");
     },
-    enabled: !!teamId,
+    enabled: !!team_id,
     refetchInterval: 5000, // Refresh every 5 seconds for real-time updates
   });
 
   // 🔹 Send Message Mutation
   const sendMutation = useMutation({
-    mutationFn: (content: string) => sendMessage(teamId, content, channelId),
+    mutationFn: (content: string) =>
+      sendMessage(
+        team_id,
+        content,
+        channel_id ?? undefined,
+        receiver_id ?? undefined,
+      ),
     onSuccess: (result) => {
       if (result.success) {
         queryClient.invalidateQueries({
-          queryKey: ["chat", teamId, channelId],
+          queryKey: ["chat", team_id, channel_id, receiver_id],
         });
       } else {
         toast.error(result.error || "Transmission failed");

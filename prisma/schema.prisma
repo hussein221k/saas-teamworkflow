@@ -10,192 +10,210 @@ datasource db {
 // Enums
 // ==============================
 
-enum Role {
+enum role {
   ADMIN
   EMPLOYEE
 }
 
-enum TaskStatus {
+enum task_status {
   PENDING
   IN_PROGRESS
   DONE
   OVERDUE
 }
 
-enum Plan {
+enum plan {
   FREE
   PRO
   ENTERPRISE
 }
 
-enum BillingStatus {
+enum billing_status {
   ACTIVE
   EXPIRED
   CANCELED
 }
 
 // ==============================
-// User
+// user
 // ==============================
 
-model User {
-  id           Int     @id @default(autoincrement())
-  name         String
-  email        String? @unique
-  username     String? @unique
-  employeeCode String? @unique
-  password     String
-  role         Role    @default(EMPLOYEE)
+model user {
+  id            String  @id @default(uuid())
+  name          String
+  email         String? @unique
+  username      String? @unique
+  employee_code String? @unique
+  password      String
+  role          role    @default(EMPLOYEE)
 
-  isBilling   Boolean
-  billingType Plan?
-  teamId      Int?
-  createdById Int?
+  is_billing    Boolean
+  billing_type  plan?
+  team_id       String?
+  created_by_id String?
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
 
-  billingDay    DateTime?
-  billingFinish DateTime?
+  billing_day    DateTime?
+  billing_finish DateTime?
 
-  // 🔹 Team membership
-  team Team? @relation("TeamMembers", fields: [teamId], references: [id])
+  team        team?  @relation("TeamMembers", fields: [team_id], references: [id])
+  owned_teams team[] @relation("TeamOwner")
 
-  // 🔹 Team ownership (Admin)
-  ownedTeams Team[] @relation("TeamOwner")
+  created_by    user?  @relation("UserCreator", fields: [created_by_id], references: [id])
+  created_users user[] @relation("UserCreator")
 
-  // 🔹 User creator (self relation)
-  createdBy    User?  @relation("UserCreator", fields: [createdById], references: [id])
-  createdUsers User[] @relation("UserCreator")
+  tasks_created  task[] @relation("CreatedTasks")
+  tasks_assigned task[] @relation("AssignedTasks")
 
-  // 🔹 Tasks
-  tasksCreated  Task[] @relation("CreatedTasks")
-  tasksAssigned Task[] @relation("AssignedTasks")
+  comments          comment[]
+  messages_sent     message[] @relation("SentMessages")
+  messages_received message[] @relation("ReceivedMessages")
 
-  // 🔹 Comments
-  comments Comment[]
-  messages Message[]
+  @@map("users")
 }
 
 // ==============================
-// Team
+// team
 // ==============================
 
-model Team {
-  id        Int      @id @default(autoincrement())
-  name      String
-  ownerId   Int
-  createdAt DateTime @default(now())
+model team {
+  id         String   @id @default(uuid())
+  name       String
+  owner_id   String
+  created_at DateTime @default(now())
 
-  // 🔹 Owner (Admin)
-  owner User @relation("TeamOwner", fields: [ownerId], references: [id])
+  owner user   @relation("TeamOwner", fields: [owner_id], references: [id])
+  users user[] @relation("TeamMembers")
 
-  // 🔹 Members
-  users User[] @relation("TeamMembers")
+  billing billing?
 
-  // 🔹 Billing
-  billing Billing?
+  tasks    task[]
+  messages message[]
+  channels channel[]
+  projects project[]
 
-  tasks      Task[]
-  messages   Message[]
-  channels   Channel[]
-  projects   Project[]
-  themeColor String    @default("#6366f1")
-  inviteCode String?   @unique
+  theme_color String  @default("#6366f1")
+  invite_code String? @unique
+
+  @@map("teams")
 }
 
 // ==============================
-// Billing
+// billing
 // ==============================
 
-model Billing {
-  id        Int           @id @default(autoincrement())
-  teamId    Int           @unique
-  plan      Plan          @default(FREE)
-  status    BillingStatus @default(ACTIVE)
-  startedAt DateTime      @default(now())
-  endsAt    DateTime?
+model billing {
+  id         String         @id @default(uuid())
+  team_id    String         @unique
+  plan       plan           @default(FREE)
+  status     billing_status @default(ACTIVE)
+  started_at DateTime       @default(now())
+  ends_at    DateTime?
 
-  team Team @relation(fields: [teamId], references: [id], onDelete: Restrict)
-}
+  team team @relation(fields: [team_id], references: [id], onDelete: Restrict)
 
-model Project {
-  id        Int      @id @default(autoincrement())
-  name      String
-  teamId    Int
-  createdAt DateTime @default(now())
-
-  team Team @relation(fields: [teamId], references: [id])
-}
-
-model Channel {
-  id        Int      @id @default(autoincrement())
-  name      String
-  teamId    Int
-  createdAt DateTime @default(now())
-
-  team     Team      @relation(fields: [teamId], references: [id])
-  messages Message[]
+  @@map("billings")
 }
 
 // ==============================
-// Task
+// project
 // ==============================
 
-model Task {
-  id          Int        @id @default(autoincrement())
+model project {
+  id         String   @id @default(uuid())
+  name       String
+  team_id    String
+  created_at DateTime @default(now())
+
+  team team @relation(fields: [team_id], references: [id])
+
+  @@map("projects")
+}
+
+// ==============================
+// channel
+// ==============================
+
+model channel {
+  id         String   @id @default(uuid())
+  name       String
+  team_id    String
+  created_at DateTime @default(now())
+
+  team     team      @relation(fields: [team_id], references: [id])
+  messages message[]
+
+  @@map("channels")
+}
+
+// ==============================
+// task
+// ==============================
+
+model task {
+  id          String      @id @default(uuid())
   title       String
   description String
-  status      TaskStatus @default(PENDING)
+  status      task_status @default(PENDING)
   deadline    DateTime?
 
-  teamId       Int
-  createdById  Int
-  assignedToId Int?
+  team_id        String
+  created_by_id  String
+  assigned_to_id String?
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
 
-  team Team @relation(fields: [teamId], references: [id])
+  team team @relation(fields: [team_id], references: [id])
 
-  createdBy  User  @relation("CreatedTasks", fields: [createdById], references: [id])
-  assignedTo User? @relation("AssignedTasks", fields: [assignedToId], references: [id])
+  created_by  user  @relation("CreatedTasks", fields: [created_by_id], references: [id])
+  assigned_to user? @relation("AssignedTasks", fields: [assigned_to_id], references: [id])
 
-  comments Comment[]
+  comments comment[]
+
+  @@map("tasks")
 }
 
 // ==============================
-// Comment
+// comment
 // ==============================
 
-model Comment {
-  id      Int    @id @default(autoincrement())
+model comment {
+  id      String @id @default(uuid())
   content String
 
-  taskId Int
-  userId Int
+  task_id String
+  user_id String
 
-  createdAt DateTime @default(now())
+  created_at DateTime @default(now())
 
-  task Task @relation(fields: [taskId], references: [id])
-  user User @relation(fields: [userId], references: [id])
+  task task @relation(fields: [task_id], references: [id])
+  user user @relation(fields: [user_id], references: [id])
+
+  @@map("comments")
 }
 
 // ==============================
-// Message (Team Chat)
+// message
 // ==============================
 
-model Message {
-  id      Int    @id @default(autoincrement())
+model message {
+  id      String @id @default(uuid())
   content String
 
-  channelId Int?
-  teamId    Int
-  userId    Int
+  channel_id  String?
+  receiver_id String?
+  team_id     String
+  user_id     String
 
-  createdAt DateTime @default(now())
+  created_at DateTime @default(now())
 
-  channel Channel? @relation(fields: [channelId], references: [id])
-  team    Team     @relation(fields: [teamId], references: [id])
-  user    User     @relation(fields: [userId], references: [id])
+  channel  channel? @relation(fields: [channel_id], references: [id])
+  receiver user?    @relation("ReceivedMessages", fields: [receiver_id], references: [id])
+  team     team     @relation(fields: [team_id], references: [id])
+  user     user     @relation("SentMessages", fields: [user_id], references: [id])
+
+  @@map("messages")
 }

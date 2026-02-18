@@ -21,7 +21,7 @@ export const BillingStatusEnum = z.enum(["ACTIVE", "EXPIRED", "CANCELED"]);
  * Schema for creating a new billing record
  */
 export const createBillingSchema = z.object({
-  teamId: z.number().int(),
+  team_id: z.string(),
   plan: PlanEnum.default("FREE"),
   status: BillingStatusEnum.default("ACTIVE"),
 });
@@ -34,3 +34,5 @@ export const updateBillingSchema = z.object({
   plan: PlanEnum.optional(),
   status: BillingStatusEnum.optional(),
 });
+
+export type Billing = z.infer<typeof createBillingSchema>

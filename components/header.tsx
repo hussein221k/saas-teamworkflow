@@ -5,18 +5,25 @@ import { Menu, X } from "lucide-react";
 import React from "react";
 import { cn } from "@/lib/utils";
 import UserAuth from "./userAuth";
-
-const menuItems = [
-  { name: "Dashboard", href: "/dashboard" },
-  { name: "Pricing", href: "/billing" },
-  { name: "About", href: "/about" },
-  { name: "Admin Sign Up", href: "/onboarding" },
-];
+import { useUser } from "@/hooks";
 
 export const HeroHeader = () => {
   const [menuState, setMenuState] = React.useState(false);
   const [isScrolled, setIsScrolled] = React.useState(false);
+  const { user, isAuthenticated } = useUser();
 
+  let href = "#";
+  if (isAuthenticated && user) {
+    const isadmin = user.role === "ADMIN";
+    href = isadmin
+      ? `/admin/dashboard/${user.team_id}`
+      : `/dashboard/${user.team_id}`;
+  }
+  const menuItems = [
+    { name: "Dashboard", href: href },
+    { name: "Pricing", href: "/billing" },
+    { name: "About", href: "/about" },
+  ];
   React.useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 50);
@@ -59,7 +66,7 @@ export const HeroHeader = () => {
             </div>
 
             <div className="absolute inset-0 m-auto hidden size-fit lg:block">
-              <ul className="flex gap-8 text-sm">
+              <ul className="flex gap-8 text-sm ">
                 {menuItems.map((item, index) => (
                   <li key={index}>
                     <Link
@@ -75,7 +82,7 @@ export const HeroHeader = () => {
 
             <div className="bg-background in-data-[state=active]:block lg:in-data-[state=active]:flex mb-6 hidden w-full flex-wrap items-center justify-end space-y-8 rounded-3xl border p-6 shadow-2xl shadow-zinc-300/20 md:flex-nowrap lg:m-0 lg:flex lg:w-fit lg:gap-6 lg:space-y-0 lg:border-transparent lg:bg-transparent lg:p-0 lg:shadow-none dark:shadow-none dark:lg:bg-transparent">
               <div className="lg:hidden">
-                <ul className="space-y-6 text-base">
+                <ul className="space-y-6 text-base ">
                   {menuItems.map((item, index) => (
                     <li key={index}>
                       <Link
@@ -88,7 +95,7 @@ export const HeroHeader = () => {
                   ))}
                 </ul>
               </div>
-              <div className="flex w-full flex-col space-y-3 sm:flex-row sm:gap-3 sm:space-y-0 md:w-fit">
+              <div className="flex w-full flex-col space-y-3 sm:flex-row sm:gap-3 sm:space-y-0 md:w-fit ml-auto">
                 <UserAuth isScrolled={isScrolled} />
               </div>
             </div>

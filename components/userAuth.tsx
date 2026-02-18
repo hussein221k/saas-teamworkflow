@@ -45,7 +45,7 @@ export default function UserAuthClient({ isScrolled }: Props) {
   }
 
   return (
-    <>
+    <div className="flex flex-row justify-center ml-auto">
       <ModeToggle />
 
       {user ? (
@@ -117,6 +117,15 @@ export default function UserAuthClient({ isScrolled }: Props) {
             <Link href="/employee/login">Employee Login</Link>
           </Button>
 
+
+          <Button
+            asChild
+            variant="ghost"
+            size="sm"
+            className={cn(isScrolled && "lg:hidden")}
+          >
+            <Link href="/onboarding">Create Team</Link>
+          </Button>
           <Button
             asChild
             variant="outline"
@@ -128,15 +137,6 @@ export default function UserAuthClient({ isScrolled }: Props) {
 
           <Button
             asChild
-            variant="ghost"
-            size="sm"
-            className={cn(isScrolled && "lg:hidden")}
-          >
-            <Link href="/onboarding">Admin Sign Up</Link>
-          </Button>
-
-          <Button
-            asChild
             size="sm"
             className={cn(isScrolled ? "lg:inline-flex" : "hidden")}
           >
@@ -144,6 +144,6 @@ export default function UserAuthClient({ isScrolled }: Props) {
           </Button>
         </>
       )}
-    </>
+    </div>
   );
 }

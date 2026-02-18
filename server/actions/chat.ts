@@ -6,37 +6,31 @@ import { revalidatePath } from "next/cache";
 import { MessageSchema } from "@/schema/MessageSchema";
 
 export async function sendMessage(
-  teamId: number,
+  team_id: string,
   content: string,
-  channelId?: number,
+  channel_id?: string,
+  receiver_id?: string,
 ) {
   const sessionUser = await getSession();
 
-  if (!sessionUser || !sessionUser.email) {
+  if (!sessionUser) {
     return { success: false, error: "Unauthorized" };
   }
 
-  const parse = MessageSchema.safeParse({ content, teamId });
+  const parse = MessageSchema.safeParse({ content, team_id });
   if (!parse.success) {
     const errorMsg = parse.error.issues[0]?.message || "Invalid input";
     return { success: false, error: errorMsg };
-  }
-
-  const dbUser = await prisma.user.findUnique({
-    where: { email: sessionUser.email },
-  });
-
-  if (!dbUser) {
-    return { success: false, error: "User not found" };
   }
 
   try {
     const newMessage = await prisma.message.create({
       data: {
         content: parse.data.content,
-        teamId: parse.data.teamId,
-        userId: dbUser.id,
-        channelId: channelId || null,
+        team_id: parse.data.team_id,
+        user_id: sessionUser.id,
+        channel_id: channel_id || null,
+        receiver_id: receiver_id || null,
       },
       include: {
         user: { select: { name: true } },
@@ -51,14 +45,32 @@ export async function sendMessage(
   }
 }
 
-export async function getTeamMessages(teamId: number, channelId?: number) {
+export async function getTeamMessages(
+  team_id: string,
+  channel_id?: string,
+  receiver_id?: string,
+) {
   try {
+    const sessionUser = await getSession();
+    if (!sessionUser) return { success: false, messages: [] };
+
+    const where: any = { team_id };
+
+    if (receiver_id) {
+      // Direct Message logic: (A -> B) OR (B -> A)
+      where.OR = [
+        { user_id: sessionUser.id, receiver_id },
+        { user_id: receiver_id, receiver_id: sessionUser.id },
+      ];
+    } else {
+      // Channel or Global chat
+      where.channel_id = channel_id || null;
+      where.receiver_id = null; // Ensure we don't mix DMs into channel chat
+    }
+
     const messages = await prisma.message.findMany({
-      where: {
-        teamId,
-        channelId: channelId || null,
-      },
-      orderBy: { createdAt: "asc" },
+      where,
+      orderBy: { created_at: "asc" },
       include: {
         user: {
           select: { name: true, email: true },

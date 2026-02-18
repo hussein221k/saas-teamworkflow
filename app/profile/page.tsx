@@ -18,8 +18,8 @@ export default async function ProfilePage() {
       team: true,
       _count: {
         select: {
-          tasksCreated: true,
-          tasksAssigned: true,
+          tasks_created: true,
+          tasks_assigned: true,
           comments: true,
         },
       },
@@ -49,18 +49,18 @@ export default async function ProfilePage() {
           <div className="mt-3 flex justify-center gap-2">
             <Badge variant="secondary">{dbUser.team?.name || "No Team"}</Badge>
             <Badge variant="outline">
-              Member since {new Date(dbUser.createdAt).toLocaleDateString()}
+              Member since {new Date(dbUser.created_at).toLocaleDateString()}
             </Badge>
           </div>
 
           <div className="mt-6 flex justify-around border-t pt-4">
             <Stat
               label="Tasks Created"
-              value={dbUser._count.tasksCreated.toString()}
+              value={dbUser._count.tasks_created.toString()}
             />
             <Stat
               label="Tasks Assigned"
-              value={dbUser._count.tasksAssigned.toString()}
+              value={dbUser._count.tasks_assigned.toString()}
             />
             <Stat label="Comments" value={dbUser._count.comments.toString()} />
           </div>
