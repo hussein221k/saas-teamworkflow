@@ -6,10 +6,19 @@ import {
   createTask,
   updateTaskStatus,
 } from "@/server/actions/task";
-import { task_status } from "@prisma/client";
 import { toast } from "sonner";
 import { useCallback } from "react";
 import { Task } from "@/schema/TaskSchema";
+
+// Local enum definition to avoid importing @prisma/client in client components
+const task_status = {
+  PENDING: "PENDING",
+  IN_PROGRESS: "IN_PROGRESS",
+  DONE: "DONE",
+  OVERDUE: "OVERDUE",
+} as const;
+
+export type TaskStatus = (typeof task_status)[keyof typeof task_status];
 
 // ============================================================================
 // TYPE DEFINITIONS
@@ -19,7 +28,6 @@ import { Task } from "@/schema/TaskSchema";
  * Task data interface matching Prisma schema
  */
 
-
 /**
  * Input data for creating a new task
  */
@@ -27,7 +35,6 @@ import { Task } from "@/schema/TaskSchema";
 /**
  * Parameter type for createTask server action
  */
-
 
 // ============================================================================
 // HOOK DEFINITION
@@ -93,8 +100,7 @@ export function useTasks(team_id: string) {
 
   // 🔹 Add Task Mutation
   const addTaskMutation = useMutation({
-    mutationFn: (data: Task) =>
-      createTask(data as Task),
+    mutationFn: (data: Task) => createTask(data as Task),
     onSuccess: (result) => {
       if (result.success) {
         toast.success("Task synchronized across nodes.");
@@ -107,7 +113,7 @@ export function useTasks(team_id: string) {
 
   // 🔹 Update Status Mutation
   const updateStatusMutation = useMutation({
-    mutationFn: ({ taskId, status }: { taskId: string; status: task_status }) =>
+    mutationFn: ({ taskId, status }: { taskId: string; status: TaskStatus }) =>
       updateTaskStatus(taskId, status),
     onSuccess: (result, variables) => {
       if (result.success) {
@@ -145,7 +151,7 @@ export function useTasks(team_id: string) {
    * @param status - New status for the task
    */
   const updateStatus = useCallback(
-    async (taskId: string, status: task_status) => {
+    async (taskId: string, status: TaskStatus) => {
       return updateStatusMutation.mutate({ taskId, status });
     },
     [updateStatusMutation],

@@ -3,7 +3,24 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { useCallback } from "react";
-import { plan, billing_status } from "@prisma/client";
+
+// Local enum definitions to avoid importing @prisma/client in client components
+const plan = {
+  FREE: "FREE",
+  PRO: "PRO",
+  ENTERPRISE: "ENTERPRISE",
+} as const;
+
+const billing_status = {
+  ACTIVE: "ACTIVE",
+  INACTIVE: "INACTIVE",
+  PAST_DUE: "PAST_DUE",
+  CANCELLED: "CANCELLED",
+} as const;
+
+export type Plan = (typeof plan)[keyof typeof plan];
+export type BillingStatus =
+  (typeof billing_status)[keyof typeof billing_status];
 
 // ============================================================================
 // TYPE DEFINITIONS
@@ -15,8 +32,8 @@ import { plan, billing_status } from "@prisma/client";
 export interface BillingInfo {
   team_id: string;
   team_name: string | null;
-  billing_type: plan;
-  billing_status: billing_status;
+  billing_type: Plan;
+  billing_status: BillingStatus;
   billing_started: Date | null;
   billing_ends: Date | null;
   is_billing: boolean;
