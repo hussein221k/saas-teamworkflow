@@ -1,7 +1,23 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import React, { useState, useMemo, useCallback, useRef, useEffect } from "react";
+// Local enum definition to avoid importing @prisma/client in client components
+const task_status = {
+  PENDING: "PENDING",
+  IN_PROGRESS: "IN_PROGRESS",
+  DONE: "DONE",
+  OVERDUE: "OVERDUE",
+} as const;
+
+export type TaskStatus = (typeof task_status)[keyof typeof task_status];
+
+import React, {
+  useState,
+  useMemo,
+  useCallback,
+  useRef,
+  useEffect,
+} from "react";
 import { gsap } from "gsap";
 import {
   ChevronLeft,
@@ -32,7 +48,6 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { format, isBefore } from "date-fns";
 import { useQuery } from "@tanstack/react-query";
-import { task_status } from "@prisma/client";
 
 interface TaskSidebarProps {
   team_id: string;
@@ -80,11 +95,11 @@ export default function TaskSidebar({
   });
 
   const handleSubmit = useCallback(
-    async (e: React.FormEvent) => {
-      e.preventDefault();
+    async (e: React.MouseEvent<HTMLButtonElement>) => {
       if (!formData.title.trim()) return;
 
       const result = await addTask({
+        id: crypto.randomUUID(),
         title: formData.title,
         description: formData.description,
         status: formData.status,
@@ -92,8 +107,7 @@ export default function TaskSidebar({
         deadline: formData.deadline ? new Date(formData.deadline) : undefined,
         team_id: team_id,
         created_by_id: user_id,
-        id: "", // Server will provide real ID
-      } as any);
+      });
 
       if (result) {
         updateUi({ isCreating: false });
@@ -106,7 +120,7 @@ export default function TaskSidebar({
         });
       }
     },
-    [formData, addTask],
+    [formData, addTask, team_id, user_id],
   );
 
   // 🔹 Entrance Animations
@@ -139,7 +153,13 @@ export default function TaskSidebar({
       gsap.fromTo(
         formRef.current,
         { height: 0, opacity: 0, scale: 0.95 },
-        { height: "auto", opacity: 1, scale: 1, duration: 0.5, ease: "expo.out" },
+        {
+          height: "auto",
+          opacity: 1,
+          scale: 1,
+          duration: 0.5,
+          ease: "expo.out",
+        },
       );
     }
   }, [ui.isCreating]);
@@ -163,7 +183,7 @@ export default function TaskSidebar({
     }
   }, [filteredTasks.length, ui.filter]);
 
-  const statusIcons = useMemo(
+  const statusIcons: Record<string, React.ReactNode> = useMemo(
     () => ({
       [task_status.PENDING]: <Circle className="w-4 h-4 text-zinc-500" />,
       [task_status.IN_PROGRESS]: (
@@ -184,7 +204,7 @@ export default function TaskSidebar({
           ui.isOpen ? "w-96" : "w-0 md:w-16",
         )}
       >
-        <div 
+        <div
           ref={headerRef}
           className="flex items-center justify-between p-4 border-b border-white/5 bg-zinc-900/50 backdrop-blur-md sticky top-0 z-50"
         >
@@ -212,12 +232,12 @@ export default function TaskSidebar({
 
         {ui.isOpen && (
           <div className="flex-1 flex flex-col min-h-0 bg-linear-to-b from-zinc-950 to-black">
-            <div 
-              ref={actionRef}
-              className="p-4 space-y-4"
-            >
+            <div ref={actionRef} className="p-4 space-y-4">
               <div className="flex items-center gap-2">
-                <Select value={ui.filter} onValueChange={(val) => updateUi({ filter: val })}>
+                <Select
+                  value={ui.filter}
+                  onValueChange={(val) => updateUi({ filter: val })}
+                >
                   <SelectTrigger className="h-8 bg-zinc-900/50 border-white/10 text-[10px] text-white font-bold uppercase tracking-widest">
                     <Filter className="w-3 h-3 mr-2 opacity-50" />
                     <SelectValue placeholder="All Clusters" />
@@ -244,10 +264,7 @@ export default function TaskSidebar({
             </div>
 
             {ui.isCreating && (
-              <div 
-                ref={formRef}
-                className="px-4 pb-4 overflow-hidden"
-              >
+              <div ref={formRef} className="px-4 pb-4 overflow-hidden">
                 <div className="p-5 rounded-3xl border border-white/5 bg-white/5 space-y-4 shadow-2xl">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-[10px] font-black text-primary uppercase tracking-[0.2em]">
@@ -275,10 +292,15 @@ export default function TaskSidebar({
                         type="date"
                         className="bg-black/50 border-white/10 h-9 text-[10px] pl-8 text-white appearance-none"
                         value={formData.deadline}
-                        onChange={(e) => updateForm({ deadline: e.target.value })}
+                        onChange={(e) =>
+                          updateForm({ deadline: e.target.value })
+                        }
                       />
                     </div>
-                    <Select value={formData.assigneeId} onValueChange={(val) => updateForm({ assigneeId: val })}>
+                    <Select
+                      value={formData.assigneeId}
+                      onValueChange={(val) => updateForm({ assigneeId: val })}
+                    >
                       <SelectTrigger className="h-9 bg-black/50 border-white/10 text-[10px] text-white">
                         <UserPlus className="w-3 h-3 mr-1 opacity-50" />
                         <SelectValue placeholder="Unit" />
@@ -303,10 +325,7 @@ export default function TaskSidebar({
             )}
 
             <ScrollArea className="flex-1 px-4">
-              <div 
-                ref={listRef}
-                className="space-y-4 pb-8"
-              >
+              <div ref={listRef} className="space-y-4 pb-8">
                 {loading ? (
                   <div className="flex flex-col gap-4 py-4">
                     {[1, 2, 3].map((i) => (
@@ -350,7 +369,7 @@ export default function TaskSidebar({
                         <div className="flex items-start justify-between gap-4 mb-3">
                           <div className="flex items-start gap-3">
                             <div className="mt-0.5">
-                              {statusIcons[task.status as task_status]}
+                              {statusIcons[task.status]}
                             </div>
                             <h3 className="text-sm font-bold leading-tight group-hover:text-primary transition-colors pr-4">
                               {task.title}
@@ -401,7 +420,10 @@ export default function TaskSidebar({
                               className="w-full h-8 text-[9px] font-black uppercase tracking-[0.2em] shadow-xl shadow-primary/10"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                updateStatus(task.id.toString(), task_status.DONE);
+                                updateStatus(
+                                  task.id.toString(),
+                                  task_status.DONE,
+                                );
                               }}
                             >
                               Authorize Completion
