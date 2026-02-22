@@ -15,7 +15,14 @@ const SECRET_KEY = new TextEncoder().encode(
 export async function getSession(): Promise<Session | null> {
   try {
     const cookieStore = await cookies();
-    const session = cookieStore.get("employee_session");
+
+    // Check for employee_session first, then admin_session
+    let session = cookieStore.get("employee_session");
+
+    // If no employee_session, check for admin_session
+    if (!session?.value) {
+      session = cookieStore.get("admin_session");
+    }
 
     if (!session?.value) {
       return null;

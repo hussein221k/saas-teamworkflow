@@ -6,10 +6,10 @@ import {
   QrCode,
   Link2,
   LogIn,
-  FolderPlus,
   Loader2,
   Trash2,
   UserPlus,
+  MessageSquare,
 } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import {
@@ -24,7 +24,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
+
 import { CreditCard } from "lucide-react";
 import { toast } from "sonner";
 import { ActiveSheet } from "./Chatchannels";
@@ -41,15 +41,6 @@ interface AdminPanelProps {
     | undefined;
   inviteUrl: string;
   onGenerateInvite: () => void;
-  newProjectName: string;
-  setNewProjectName: (name: string) => void;
-  handleCreateProject: () => void;
-  isCreatingProject: boolean;
-  projects: {
-    id: string;
-    name: string;
-  }[];
-  handleDeleteProject: (id: string) => void;
   empName: string;
   setEmpName: (v: string) => void;
   empCode: string;
@@ -76,12 +67,6 @@ export function AdminPanel({
   currentTeam,
   inviteUrl,
   onGenerateInvite,
-  newProjectName,
-  setNewProjectName,
-  handleCreateProject,
-  isCreatingProject,
-  projects,
-  handleDeleteProject,
   empName,
   setEmpName,
   empCode,
@@ -185,64 +170,6 @@ export function AdminPanel({
             )}
           </div>
 
-          {/* 🚀 Project Initialization */}
-          <div className="space-y-6 text-left">
-            <div className="flex items-center justify-between">
-              <h3 className="text-sm font-black uppercase tracking-[0.2em] flex items-center gap-2 text-white">
-                <FolderPlus className="w-4 h-4 text-primary" /> Project
-                Deployment
-              </h3>
-              <Badge
-                variant="outline"
-                className="text-emerald-500 border-emerald-500/20 bg-emerald-500/5"
-              >
-                $5.00 / Node
-              </Badge>
-            </div>
-            <div className="flex gap-3">
-              <Input
-                value={newProjectName}
-                onChange={(e) => setNewProjectName(e.target.value)}
-                placeholder="Project Designation (e.g. AX-7)"
-                className="bg-zinc-900 border-white/5 h-12 text-sm font-medium text-white"
-              />
-              <Button
-                onClick={handleCreateProject}
-                disabled={isCreatingProject}
-                className="h-12 px-6 font-black uppercase tracking-widest bg-primary hover:bg-primary/80 transition-all shadow-lg shadow-primary/20 text-white"
-              >
-                {isCreatingProject ? (
-                  <Loader2 className="animate-spin" />
-                ) : (
-                  "Deploy"
-                )}
-              </Button>
-            </div>
-            <div className="grid grid-cols-1 gap-2">
-              {projects.map((p) => (
-                <div
-                  key={p.id}
-                  className="group flex items-center justify-between p-4 rounded-xl bg-white/5 border border-white/5 hover:border-primary/30 transition-all"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-2 h-2 rounded-full bg-primary" />
-                    <span className="text-sm font-bold tracking-tight text-white">
-                      {p.name}
-                    </span>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8 text-zinc-600 hover:text-red-500"
-                    onClick={() => handleDeleteProject(p.id)}
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
-                </div>
-              ))}
-            </div>
-          </div>
-
           {/* 👥 Unit Synchronization (Employee Management) */}
           <div className="space-y-6 text-left">
             <h3 className="text-sm font-black uppercase tracking-[0.2em] flex items-center gap-2 text-white">
@@ -342,6 +269,17 @@ export function AdminPanel({
                         <Button
                           variant="ghost"
                           size="icon"
+                          className="opacity-0 group-hover:opacity-100 h-8 w-8 text-zinc-600 hover:text-primary"
+                          title="Chat with Unit"
+                          onClick={() => {
+                            window.location.href = `/admin/dashboard/${currentTeam?.id}?receiver_id=${m.id}`;
+                          }}
+                        >
+                          <MessageSquare className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
                           className="opacity-0 group-hover:opacity-100 h-8 w-8 text-zinc-600 hover:text-orange-500"
                           title="Expel Unit"
                           onClick={() => onKickMember(m.id)}
@@ -359,6 +297,56 @@ export function AdminPanel({
                       </div>
                     </div>
                   ))}
+              </div>
+            </div>
+
+            {/* 📡 All Team Members for Chat */}
+            <div className="space-y-6 text-left">
+              <h3 className="text-sm font-black uppercase tracking-[0.2em] flex items-center gap-2 text-white">
+                <MessageSquare className="w-4 h-4 text-primary" /> Neural
+                Communication
+              </h3>
+              <p className="text-[10px] text-zinc-500 font-medium">
+                Click to initiate direct communication with any team member
+              </p>
+              <div className="grid grid-cols-1 gap-2 max-h-64 overflow-y-auto">
+                {members.map((m) => (
+                  <div
+                    key={m.id}
+                    className="flex items-center justify-between p-3 rounded-xl bg-black/40 border border-white/5 group hover:border-primary/30 transition-all cursor-pointer"
+                    onClick={() => {
+                      window.location.href = `/admin/dashboard/${currentTeam?.id}?receiver_id=${m.id}`;
+                    }}
+                  >
+                    <div className="flex items-center gap-3">
+                      <Avatar className="h-8 w-8 border border-white/10">
+                        <AvatarFallback className="bg-zinc-800 text-[10px] font-black uppercase">
+                          {m.name[0]}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex flex-col">
+                        <span className="text-xs font-bold leading-none mb-1 text-white">
+                          {m.name}
+                        </span>
+                        <span className="text-[9px] font-black uppercase text-zinc-500">
+                          {m.role}
+                        </span>
+                      </div>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-zinc-600 hover:text-primary"
+                      title="Chat"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        window.location.href = `/admin/dashboard/${currentTeam?.id}?receiver_id=${m.id}`;
+                      }}
+                    >
+                      <MessageSquare className="w-4 h-4" />
+                    </Button>
+                  </div>
+                ))}
               </div>
             </div>
           </div>

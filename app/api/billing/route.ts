@@ -11,7 +11,7 @@ const SECRET_KEY = new TextEncoder().encode(
  * Fetch billing info for the user's team
  * Requires admin role
  */
-export async function GET(request: Request) {
+export async function GET() {
   try {
     const cookieStore = await import("next/headers").then((mod) =>
       mod.cookies(),

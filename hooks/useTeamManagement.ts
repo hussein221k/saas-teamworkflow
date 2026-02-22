@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 "use client";
 
 import { useState, useCallback } from "react";
@@ -59,7 +60,7 @@ export function useTeamManagement() {
     isSheetOpen: formState.isSheetOpen,
     setIsSheetOpen: (val: boolean) => updateForm({ isSheetOpen: val }),
     activeSheet: formState.activeSheet,
-    setactiveSheet: (val: boolean) => updateForm({ activeSheet: val }),
+    setActiveSheet: (val: boolean) => updateForm({ activeSheet: val }),
     joinCodeInput: formState.joinCodeInput,
     setJoinCodeInput: (val: string) => updateForm({ joinCodeInput: val }),
     isJoining: formState.isJoining,

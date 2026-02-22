@@ -36,6 +36,7 @@ export function useEmployeeManagement() {
       empPass: "",
       isCreatingEmp: false,
     });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   /**

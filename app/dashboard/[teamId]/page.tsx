@@ -60,16 +60,6 @@ async function page({ params }: { params: Promise<{ team_id: string }> }) {
   await checkSubscriptionStatus(currentTeam.id);
   const currentPlan = currentTeam.billing?.plan || "FREE";
 
-  // Get user's teams for sidebar
-  const userTeamsResponse = await fetch(
-    `${process.env.NEXT_PUBLIC_APP_URL || ""}/api/team`,
-    {
-      headers: {
-        cookie: "",
-      },
-    },
-  ).catch(() => ({ json: async () => ({ teams: [], isAdmin: false }) }));
-
   // Fallback: fetch teams directly
   const ownedTeams = await prisma.team.findMany({
     where: { owner_id: user.id },

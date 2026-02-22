@@ -16,24 +16,20 @@ export async function createTeam(name: string, owner_id: string) {
   const security = await secureAction();
   if (security.denied) return { success: false, error: security.error };
 
-  try {
-    const validatedData = TeamSchema.parse({ name });
+  if (!name || name.trim().length < 2) {
+    return { success: false, error: "Team name must be at least 2 characters" };
+  }
 
+  try {
     const newTeam = await prisma.team.create({
       data: {
-        name: validatedData.name,
+        name: name.trim(),
         owner_id: owner_id,
         users: {
-          connect: { id: owner_id }, // Automatically add creator as member
+          connect: { id: owner_id },
         },
       },
     });
-
-    // Since the User model has a team_id foreign key, connecting the user
-    // in the `users` relation above update the user's team_id.
-    // However, let's be explicit if needed, but `connect` should handle it for 1-to-many.
-    // Actually, in 1-to-many, `users` is the relation back to User.
-    // Updating the relation from Team side updates the FK on User side.
 
     revalidatePath("/dashboard");
     return { success: true, team: newTeam };
@@ -44,12 +40,14 @@ export async function createTeam(name: string, owner_id: string) {
 }
 
 export async function updateTeam(team_id: string, name: string) {
-  try {
-    const validatedData = TeamSchema.parse({ name });
+  if (!name || name.trim().length < 2) {
+    return { success: false, error: "Team name must be at least 2 characters" };
+  }
 
+  try {
     const updatedTeam = await prisma.team.update({
       where: { id: team_id },
-      data: { name: validatedData.name },
+      data: { name: name.trim() },
     });
 
     revalidatePath("/dashboard");

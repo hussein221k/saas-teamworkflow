@@ -30,7 +30,9 @@ export function useChat(
   const {
     data: messages = [],
     isLoading,
+    isFetching,
     refetch,
+    error,
   } = useQuery({
     queryKey: ["chat", team_id, channel_id, receiver_id],
     queryFn: async () => {
@@ -48,8 +50,8 @@ export function useChat(
       }
       throw new Error(result.error || "Uplink synchronization failed");
     },
-    enabled: !!team_id,
-    refetchInterval: 5000, // Refresh every 5 seconds for real-time updates
+    enabled: !!team_id && team_id !== "undefined",
+    staleTime: 10000, // Cache data for 10 seconds to reduce refetching
   });
 
   // 🔹 Send Message Mutation
@@ -87,8 +89,10 @@ export function useChat(
   return {
     messages,
     loading: isLoading,
+    isFetching,
     isSending: sendMutation.isPending,
     send,
     refreshMessages: refetch,
+    error,
   };
 }

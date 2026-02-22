@@ -27,6 +27,7 @@ export function useChannelManagement() {
    */
   const resetChannelForm = useCallback(() => {
     updateState({ newGroupName: "", activeSheet: false });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return {

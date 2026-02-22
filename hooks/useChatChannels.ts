@@ -1,6 +1,6 @@
 "use client";
 
-import { Channel } from '@/schema/ChannelSchema';
+import { Channel } from "@/schema/ChannelSchema";
 import { useState, useMemo, useCallback } from "react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -37,7 +37,6 @@ import { useEmployeeManagement } from "./useEmployeeManagement";
 // TYPES
 // ============================================================================
 
-
 /**
  * Main hook for managing chat channels, teams, projects, and employees
  * Orchestrates multiple sub-hooks for better organization and readability
@@ -47,10 +46,8 @@ import { useEmployeeManagement } from "./useEmployeeManagement";
  * @param initialTeams - Initial list of teams user belongs to
  * @param isAdmin - Whether user has admin privileges
  */
-export function useChatChannels({
-  user_id,
-  team_id,
-}: Channel) {
+
+export function useChatChannels({ user_id, team_id }: Channel) {
   // ============================================================================
   // UI STATE - General interface state
   // ============================================================================
@@ -74,8 +71,7 @@ export function useChatChannels({
   const queryClient = useQueryClient();
 
   // Extract active channel from URL
-  const activeChannelIdStr = searchParams.get("channel_id");
-  const activeChannelId = activeChannelIdStr;
+  const activeChannelId = searchParams.get("channel_id") ?? null;
 
   /**
    * Navigate to a specific channel or clear channel selection
@@ -242,10 +238,7 @@ export function useChatChannels({
   const handleCreateChannel = useCallback(async () => {
     if (!channelState.newGroupName.trim()) return;
 
-    const result = await createChannel(
-      team_id,
-      channelState.newGroupName,
-    );
+    const result = await createChannel(team_id, channelState.newGroupName);
     if (result.success) {
       channelState.resetChannelForm();
       toast.success("Channel node established");
@@ -395,14 +388,14 @@ export function useChatChannels({
     isSheetOpen: teamState.isSheetOpen,
     setIsSheetOpen: teamState.setIsSheetOpen,
     activeSheet: teamState.activeSheet,
-    setactiveSheet: teamState.setactiveSheet,
+    setActiveSheet: teamState.setActiveSheet,
     joinCodeInput: teamState.joinCodeInput,
     setJoinCodeInput: teamState.setJoinCodeInput,
     isJoining: teamState.isJoining,
 
     // Channel State (from useChannelManagement)
     activeChannelSheet: channelState.activeSheet,
-    setActiveSheet: channelState.setActiveSheet,
+    setChannelActiveSheet: channelState.setActiveSheet,
     newGroupName: channelState.newGroupName,
     setNewGroupName: channelState.setNewGroupName,
 

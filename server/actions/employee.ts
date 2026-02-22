@@ -77,44 +77,6 @@ export async function createEmployee(data: CreateEmployee) {
   }
 }
 
-export async function provisionGhostUsers(team_id: string, names: string[]) {
-  const sessionUser = await getAdminSession();
-  if (!sessionUser || !sessionUser.email) {
-    return { success: false, error: "Unauthorized access" };
-  }
-
-  const results = [];
-  const hashedPassword = await bcrypt.hash("ghost_protocol_12345", 10);
-
-  for (const name of names) {
-    const cleanName = name.trim();
-    if (!cleanName) continue;
-
-    const username = `ghost_${cleanName.toLowerCase().replace(/\s+/g, "_")}_${Math.random().toString(36).substring(2, 5)}`;
-    const employee_code = `EN-GP-${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
-
-    try {
-      await prisma.user.create({
-        data: {
-          name: cleanName,
-          username,
-          employee_code,
-          password: hashedPassword,
-          role: role.EMPLOYEE,
-          team_id: team_id,
-          is_billing: false,
-        },
-      });
-      results.push(cleanName);
-    } catch (e) {
-      console.error(`Failed to provision ghost: ${cleanName}`, e);
-    }
-  }
-
-  revalidatePath("/dashboard");
-  return { success: true, provisioned: results };
-}
-
 export async function deleteEmployee(employeeId: string) {
   const sessionUser = await getAdminSession();
 

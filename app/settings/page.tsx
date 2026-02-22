@@ -33,6 +33,7 @@ export default async function SettingsPage() {
             <ProfileForm
               initialName={dbUser.name}
               initialEmail={dbUser.email || ""}
+              userId={dbUser.id}
             />
           </CardContent>
         </Card>

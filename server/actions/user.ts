@@ -1,32 +1,23 @@
 "use server";
 
-import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { getSession } from "@/lib/auth";
 
-const UserUpdateSchema = z.object({
-  name: z.string().min(2, "Name must be at least 2 characters"),
-});
-
-export async function updateUserProfile(formData: { name: string }) {
+export async function updateUserProfile(
+  formData: { name: string },
+  user_id: string,
+) {
   const sessionUser = await getSession();
 
   if (!sessionUser || !sessionUser.email) {
     return { success: false, error: "Unauthorized" };
   }
 
-  const result = UserUpdateSchema.safeParse(formData);
-  if (!result.success) {
-    const error =
-      result.error.flatten().fieldErrors.name?.[0] || "Invalid input";
-    return { success: false, error };
-  }
-
   try {
     await prisma.user.update({
-      where: { email: sessionUser.email },
-      data: { name: result.data.name },
+      where: { id: user_id },
+      data: formData,
     });
 
     revalidatePath("/profile");

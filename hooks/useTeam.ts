@@ -1,24 +1,7 @@
-"use client";
+"use client"
 
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
-import { useCallback } from "react";
-
-// ============================================================================
-// TYPE DEFINITIONS
-// ============================================================================
-
-/**
- * Team data interface
- */
-export interface Team {
-  id: string;
-  name: string;
-  owner_id: string;
-  theme_color: string;
-  invite_code: string | null;
-  created_at: Date;
-}
+import { Team } from "@/schema/TeamSchema";
+import { useQuery } from "@tanstack/react-query";
 
 /**
  * Team with members and billing

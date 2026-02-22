@@ -42,7 +42,7 @@ function Chat({ team_id, currentuser_id }: ChatProps) {
   const channel_id = searchParams.get("channel_id");
   const receiver_id = searchParams.get("receiver_id");
 
-  const { messages, loading, send, isSending } = useChat(
+  const { messages, loading, isFetching, send, isSending } = useChat(
     team_id,
     channel_id,
     receiver_id,
@@ -171,7 +171,9 @@ function Chat({ team_id, currentuser_id }: ChatProps) {
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => window.dispatchEvent(new CustomEvent("toggle-ai-chat"))}
+            onClick={() =>
+              window.dispatchEvent(new CustomEvent("toggle-ai-chat"))
+            }
             className="h-8 w-8 text-primary hover:text-primary hover:bg-primary/10 bg-primary/5 border border-primary/20"
           >
             <Brain className="w-4 h-4" />
@@ -249,7 +251,7 @@ function Chat({ team_id, currentuser_id }: ChatProps) {
 
       {/* Chat Input */}
       <div className="p-4 bg-zinc-900/50 backdrop-blur-xl border-t border-white/10 relative overflow-hidden">
-        {(loading || isSending) && (
+        {(isFetching || isSending) && (
           <div className="absolute top-0 left-0 h-0.5 bg-primary animate-pulse w-full" />
         )}
 

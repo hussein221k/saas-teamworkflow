@@ -19,9 +19,10 @@ export const HeroHeader = () => {
       ? `/admin/dashboard/${user.team_id}`
       : `/dashboard/${user.team_id}`;
   }
+
   const menuItems = [
     { name: "Dashboard", href: href },
-    { name: "Pricing", href: "/billing" },
+    ...(user?.role === "ADMIN" ? [{ name: "Pricing", href: "/billing" }] : []),
     { name: "About", href: "/about" },
   ];
   React.useEffect(() => {

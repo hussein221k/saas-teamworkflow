@@ -4,37 +4,15 @@
 import { prisma } from "@/lib/prisma";
 import { getAdminSession } from "@/server/actions/admin-auth";
 import { z } from "zod";
-import { plan, role } from "@prisma/client";
+import { role } from "@prisma/client";
 import { redirect } from "next/navigation";
 import { secureAction } from "@/lib/security";
 import { revalidatePath } from "next/cache";
 import bcrypt from "bcryptjs";
 import { SignJWT } from "jose";
 import { cookies } from "next/headers";
+import { UserSchema } from "@/schema/UserSchema";
 
-// ============================================================================
-// SCHEMA VALIDATION
-// ============================================================================
-
-const OnboardingSchema = z.object({
-  teamName: z
-    .string()
-    .min(2, "Team name is required")
-    .max(100, "Team name too long"),
-  plan: z.nativeEnum(plan),
-});
-
-// Admin Signup Schema - for new admin registration
-const AdminSignupSchema = z.object({
-  name: z.string().min(3, "Name must be at least 3 characters").max(50),
-  email: z.string().email("Valid email is required"),
-  password: z.string().min(8, "Password must be at least 8 characters"),
-  teamName: z
-    .string()
-    .min(2, "Team name is required")
-    .max(100, "Team name too long"),
-  plan: z.nativeEnum(plan),
-});
 
 const SECRET_KEY = new TextEncoder().encode(
   process.env.JWT_SECRET || "default_secret_key",
@@ -73,7 +51,7 @@ function checkRateLimit(
 // ============================================================================
 
 export async function finishOnboarding(
-  formData: z.infer<typeof OnboardingSchema>,
+  formData: z.infer<typeof UserSchema>,
 ) {
   // 1. Security Check (Arcjet + Rate Limiting)
   const security = await secureAction();
@@ -102,9 +80,9 @@ export async function finishOnboarding(
   }
 
   // 3. Input Validation (Zod)
-  const parse = OnboardingSchema.safeParse(formData);
-  if (!parse.success) {
-    return { success: false, error: parse.error.issues[0].message };
+  const parse = prisma.user.create({data:formData})
+  if (!parse) {
+    return { success: false, error: "someThing Wrong"};
   }
 
 
@@ -139,7 +117,7 @@ export async function finishOnboarding(
 // ADMIN SIGNUP - Create new admin with their own team
 // ============================================================================
 
-export async function adminSignup(formData: z.infer<typeof AdminSignupSchema>) {
+export async function adminSignup(formData: z.infer<typeof UserSchema> , teamName : string) {
   // 1. Security Check (Arcjet)
   const security = await secureAction();
   if (security.denied) {
@@ -147,12 +125,12 @@ export async function adminSignup(formData: z.infer<typeof AdminSignupSchema>) {
   }
 
   // 2. Input Validation (Zod)
-  const parse = AdminSignupSchema.safeParse(formData);
-  if (!parse.success) {
-    return { success: false, error: parse.error.issues[0].message };
+  const parse = prisma.user.create({data:formData})
+  if (!parse) {
+    return { success: false, error: "something wrong" };
   }
 
-  const { name, email, password, teamName, plan } = parse.data;
+  const {email  , password , is_billing , billing_type , name }  = formData
 
   // 3. Check if email already exists
   const existingUser = await prisma.user.findUnique({
@@ -166,7 +144,6 @@ export async function adminSignup(formData: z.infer<typeof AdminSignupSchema>) {
   try {
     // 4. Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
-
     // 5. Create admin user and team in transaction
     const result = await prisma.$transaction(async (tx) => {
       // Sanitize inputs
@@ -188,8 +165,8 @@ export async function adminSignup(formData: z.infer<typeof AdminSignupSchema>) {
           username: sanitizedEmail.split("@")[0],
           password: hashedPassword,
           role: role.ADMIN,
-          is_billing: plan === "FREE",
-          billing_type: plan,
+          is_billing: is_billing,
+          billing_type: billing_type,
         },
         select: { id: true, name: true, email: true },
       });
@@ -210,11 +187,11 @@ export async function adminSignup(formData: z.infer<typeof AdminSignupSchema>) {
       });
 
       // Create billing record if not free plan
-      if (plan !== "FREE") {
+      if (billing_type !== "FREE") {
         await tx.billing.create({
           data: {
             team_id: newTeam.id,
-            plan: plan,
+            plan: billing_type,
             status: "ACTIVE",
             started_at: new Date(),
           },

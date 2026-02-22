@@ -1,28 +1,15 @@
 "use client";
 
+import { User } from "@/schema/UserSchema";
 import { useQuery } from "@tanstack/react-query";
-import { Session } from "@/schema/UserSchema";
 
-// ============================================================================
-// TYPE DEFINITIONS
-// ============================================================================
 
-/**
- * User data from API response
- */
-export interface UserData {
-  id: string;
-  name: string;
-  email: string;
-  role: "ADMIN" | "EMPLOYEE";
-  team_id: string | null;
-}
 
 /**
  * Session response from API
  */
 export interface SessionResponse {
-  user: UserData | null;
+  user: User | null;
   isAdmin: boolean;
   error?: string;
 }
@@ -79,7 +66,7 @@ export function useUserById(userId: string | null) {
     data: user,
     isLoading,
     refetch,
-  } = useQuery<UserData | null>({
+  } = useQuery<User | null>({
     queryKey: ["user", userId],
     queryFn: async () => {
       if (!userId) return null;

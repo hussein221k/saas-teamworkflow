@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 "use client";
 
@@ -14,7 +15,7 @@ import {
 } from "@/server/actions/team";
 import { createChannel, getTeamChannels } from "@/server/actions/channel";
 import { createProject, getTeamProjects, deleteProject } from "@/server/actions/project";
-import { createEmployee, deleteEmployee, provisionGhostUsers } from "@/server/actions/employee";
+import { createEmployee, deleteEmployee } from "@/server/actions/employee";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import {
   Sheet,
@@ -201,10 +202,6 @@ function Chatsmange({
       if (res.success) {
         if (ui.isEncryptionMode && formData.externalIdentities.trim()) {
           const names = formData.externalIdentities.split(",").filter(n => n.trim());
-          const provRes = await provisionGhostUsers(currentteam_id, names);
-          if (provRes.success) {
-            toast.success(`${provRes.provisioned?.length} Encrypted Identities synchronized.`);
-          }
         } else {
           toast.success("New communication node initialized.");
         }
@@ -544,12 +541,6 @@ function Chatsmange({
           currentTeam={currentTeam}
           inviteUrl={inviteUrl}
           onGenerateInvite={onGenerateInvite}
-          newProjectName={formData.projectName}
-          setNewProjectName={(name) => updateForm({ projectName: name })}
-          handleCreateProject={handleCreateProject}
-          isCreatingProject={loading.project}
-          projects={projects}
-          handleDeleteProject={handleDeleteProject}
           empName={formData.empName}
           setEmpName={(name) => updateForm({ empName: name })}
           empCode={formData.empCode}

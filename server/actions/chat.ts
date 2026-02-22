@@ -3,7 +3,7 @@
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
-import { MessageSchema } from "@/schema/MessageSchema";
+
 
 export async function sendMessage(
   team_id: string,
@@ -17,17 +17,15 @@ export async function sendMessage(
     return { success: false, error: "Unauthorized" };
   }
 
-  const parse = MessageSchema.safeParse({ content, team_id });
-  if (!parse.success) {
-    const errorMsg = parse.error.issues[0]?.message || "Invalid input";
-    return { success: false, error: errorMsg };
+  if (!content || !team_id) {
+    return { success: false, error: "Invalid input" };
   }
 
   try {
     const newMessage = await prisma.message.create({
       data: {
-        content: parse.data.content,
-        team_id: parse.data.team_id,
+        content,
+        team_id,
         user_id: sessionUser.id,
         channel_id: channel_id || null,
         receiver_id: receiver_id || null,
@@ -37,7 +35,7 @@ export async function sendMessage(
       },
     });
 
-    revalidatePath("/dashboard");
+    revalidatePath(`/dashboard/${team_id}`);
     return { success: true, message: newMessage };
   } catch (error) {
     console.error("Failed to send message:", error);
@@ -52,35 +50,46 @@ export async function getTeamMessages(
 ) {
   try {
     const sessionUser = await getSession();
-    if (!sessionUser) return { success: false, messages: [] };
+    if (!sessionUser)
+      return { success: false, messages: [], error: "Not authenticated" };
 
-    const where: any = { team_id };
+    // Build simple where clause - avoid complex typing that can cause issues
+    const queryOptions: {
+      where: {
+        team_id: string;
+        channel_id?: string | null;
+        receiver_id?: string | null;
+        OR?: Array<{ user_id: string; receiver_id: string }>;
+      };
+      orderBy: { created_at: "asc" };
+      include: { user: { select: { id: true; name: true } } };
+    } = {
+      where: { team_id },
+      orderBy: { created_at: "asc" },
+      include: { user: { select: { id: true, name: true } } },
+    };
 
-    if (receiver_id) {
-      // Direct Message logic: (A -> B) OR (B -> A)
-      where.OR = [
+    if (receiver_id && receiver_id.length > 0) {
+      // Direct Message: show messages between current user and receiver
+      queryOptions.where.OR = [
         { user_id: sessionUser.id, receiver_id },
         { user_id: receiver_id, receiver_id: sessionUser.id },
       ];
+    } else if (channel_id && channel_id.length > 0) {
+      // Channel message: filter by channel_id
+      queryOptions.where.channel_id = channel_id;
+      queryOptions.where.receiver_id = null;
     } else {
-      // Channel or Global chat
-      where.channel_id = channel_id || null;
-      where.receiver_id = null; // Ensure we don't mix DMs into channel chat
+      // No channel selected - show only global messages (no channel_id, no receiver_id)
+      queryOptions.where.channel_id = null;
+      queryOptions.where.receiver_id = null;
     }
 
-    const messages = await prisma.message.findMany({
-      where,
-      orderBy: { created_at: "asc" },
-      include: {
-        user: {
-          select: { name: true, email: true },
-        },
-      },
-    });
+    const messages = await prisma.message.findMany(queryOptions);
 
-    return { success: true, messages };
+    return { success: true, messages: messages || [] };
   } catch (error) {
     console.error("Failed to fetch messages:", error);
-    return { success: false, messages: [] };
+    return { success: false, messages: [], error: String(error) };
   }
 }

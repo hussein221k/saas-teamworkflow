@@ -8,7 +8,7 @@ import { updateUserProfile } from "@/server/actions/user";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 
-export function ProfileForm({ initialName, initialEmail }: { initialName: string; initialEmail: string }) {
+export function ProfileForm({ initialName, initialEmail, userId }: { initialName: string; initialEmail: string; userId: string }) {
   const [state, setState] = useState({
     name: initialName,
     loading: false,
@@ -20,7 +20,7 @@ export function ProfileForm({ initialName, initialEmail }: { initialName: string
 
   const handleSave = async () => {
     updateState({ loading: true });
-    const result = await updateUserProfile({ name: state.name });
+    const result = await updateUserProfile({ name: state.name }, userId);
     updateState({ loading: false });
 
     if (result.success) {
