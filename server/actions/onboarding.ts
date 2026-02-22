@@ -80,9 +80,9 @@ export async function finishOnboarding(
   }
 
   // 3. Input Validation (Zod)
-  const parse = prisma.user.create({data:formData})
-  if (!parse) {
-    return { success: false, error: "someThing Wrong"};
+  const parse = UserSchema.safeParse(formData);
+  if (!parse.success) {
+    return { success: false, error: "invalid data" };
   }
 
 
@@ -117,20 +117,22 @@ export async function finishOnboarding(
 // ADMIN SIGNUP - Create new admin with their own team
 // ============================================================================
 
-export async function adminSignup(formData: z.infer<typeof UserSchema> , teamName : string) {
+export async function adminSignup(data: {
+  name: string;
+  email: string;
+  password: string;
+  teamName: string;
+  plan: "FREE" | "PRO" | "ENTERPRISE";
+}) {
   // 1. Security Check (Arcjet)
   const security = await secureAction();
   if (security.denied) {
     return { success: false, error: security.error };
   }
 
-  // 2. Input Validation (Zod)
-  const parse = prisma.user.create({data:formData})
-  if (!parse) {
-    return { success: false, error: "something wrong" };
-  }
-
-  const {email  , password , is_billing , billing_type , name }  = formData
+  const { email, password, name, teamName, plan } = data;
+  const is_billing = plan !== "FREE";
+  const billing_type = plan;
 
   // 3. Check if email already exists
   const existingUser = await prisma.user.findUnique({
