@@ -30,6 +30,7 @@ export default function OnboardingPage() {
 
     const data = {
       name: formData.get("name") as string,
+      username: formData.get("username") as string,
       email: formData.get("email") as string,
       password: formData.get("password") as string,
       teamName: formData.get("teamName") as string,
@@ -87,6 +88,21 @@ export default function OnboardingPage() {
                 type="email"
                 required
                 placeholder="admin@company.com"
+                className="bg-background"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="username" className="text-sm font-medium">
+                <User className="inline h-4 w-4 mr-1" />
+                Username (Unique)
+              </Label>
+              <Input
+                name="username"
+                id="username"
+                required
+                minLength={3}
+                placeholder="adminusername"
                 className="bg-background"
               />
             </div>

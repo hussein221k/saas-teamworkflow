@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { gsap } from "gsap";
 import { Button } from "@/components/ui/button";
 import { updateTeamColor } from "@/server/actions/team";
 import { toast } from "sonner";
@@ -48,26 +47,6 @@ export default function ThemeCustomizer({
   if (isLoading) {
     return <GlobalLoading />;
   }
-
-  // 🔹 Grid Animation
-  // eslint-disable-next-line react-hooks/rules-of-hooks
-  useEffect(() => {
-    if (state.isMenuOpen && gridRef.current) {
-      gsap.fromTo(
-        gridRef.current.children,
-        { scale: 0, opacity: 0, rotate: -45 },
-        { scale: 1, opacity: 1, rotate: 0, duration: 0.5, stagger: 0.05, ease: "back.out(1.7)" }
-      );
-      
-      if (statusRef.current) {
-        gsap.fromTo(
-          statusRef.current,
-          { y: 10, opacity: 0 },
-          { y: 0, opacity: 1, duration: 0.4, delay: 0.3, ease: "power2.out" }
-        );
-      }
-    }
-  }, [state.isMenuOpen]);
 
   const colors = [
     "#6366f1", // Indigo (Default)
@@ -123,10 +102,7 @@ export default function ThemeCustomizer({
             </span>
           </div>
 
-          <div 
-            ref={gridRef}
-            className="grid grid-cols-4 gap-3"
-          >
+          <div ref={gridRef} className="grid grid-cols-4 gap-3">
             {colors.map((c) => (
               <button
                 key={c}
@@ -147,10 +123,7 @@ export default function ThemeCustomizer({
           </div>
 
           {currentPlan === "FREE" && (
-            <div 
-              ref={statusRef}
-              className="pt-2"
-            >
+            <div ref={statusRef} className="pt-2">
               <p className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest leading-relaxed">
                 Module locked. Upgrade to PRO to enable color modification.
               </p>

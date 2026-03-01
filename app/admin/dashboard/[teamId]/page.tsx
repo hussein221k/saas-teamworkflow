@@ -83,7 +83,11 @@ async function page({ params }: { params: Promise<{ team_id: string }> }) {
           isAdmin={dbUser.role === "ADMIN"}
         />
         <div className="flex flex-1 flex-row relative">
-          <Chat team_id={activeteam_id} currentuser_id={dbUser.id} />
+          <Chat
+            team_id={activeteam_id}
+            currentuser_id={dbUser.id}
+            isAdmin={dbUser.role === "ADMIN"}
+          />
           <TaskSidebar
             team_id={activeteam_id}
             user_id={dbUser.id}

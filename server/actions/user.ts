@@ -2,15 +2,18 @@
 
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
-import { getSession } from "@/lib/auth";
+
+// shared auth/validation helpers
+import { requireAuth } from "@/middleware/auth";
 
 export async function updateUserProfile(
   formData: { name: string },
   user_id: string,
 ) {
-  const sessionUser = await getSession();
-
-  if (!sessionUser || !sessionUser.email) {
+  let sessionUser;
+  try {
+    sessionUser = await requireAuth();
+  } catch (err) {
     return { success: false, error: "Unauthorized" };
   }
 
@@ -30,9 +33,10 @@ export async function updateUserProfile(
 }
 
 export async function deleteUserAccount() {
-  const sessionUser = await getSession();
-
-  if (!sessionUser || !sessionUser.email) {
+  let sessionUser;
+  try {
+    sessionUser = await requireAuth();
+  } catch (err) {
     return { success: false, error: "Unauthorized" };
   }
 

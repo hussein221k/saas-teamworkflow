@@ -12,17 +12,18 @@ export const HeroHeader = () => {
   const [isScrolled, setIsScrolled] = React.useState(false);
   const { user, isAuthenticated } = useUser();
 
-  let href = "#";
-  if (isAuthenticated && user) {
-    const isadmin = user.role === "ADMIN";
-    href = isadmin
-      ? `/admin/dashboard/${user.team_id}`
-      : `/dashboard/${user.team_id}`;
+  // Dashboard link: login when unauthenticated, else correct dashboard by role
+  let href = "/employee/login";
+  if (isAuthenticated && user?.team_id) {
+    href =
+      user.role === "ADMIN"
+        ? `/admin/dashboard/${user.team_id}`
+        : `/dashboard/${user.team_id}`;
   }
 
   const menuItems = [
     { name: "Dashboard", href: href },
-    ...(user?.role === "ADMIN" ? [{ name: "Pricing", href: "/billing" }] : []),
+    // FEATURE: Billing — uncomment when enabling: ...(user?.role === "ADMIN" ? [{ name: "Pricing", href: "/billing" }] : []),
     { name: "About", href: "/about" },
   ];
   React.useEffect(() => {

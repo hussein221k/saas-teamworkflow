@@ -8,15 +8,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { loginAdmin, getAdminSession } from "@/server/actions/admin-auth";
-import gsap from "gsap";
-import {
-  Loader2,
-  Lock,
-  Mail,
-  Shield,
-  ArrowRight,
-  Sparkles,
-} from "lucide-react";
+import { Loader2, Lock, Mail, Shield, ArrowRight } from "lucide-react";
 import Link from "next/link";
 
 export default function AdminLoginPage() {
@@ -40,7 +32,6 @@ export default function AdminLoginPage() {
     checkSession();
   }, [router]);
 
-
   // Refs for GSAP animations
   const containerRef = useRef<HTMLDivElement>(null);
   const cardRef = useRef<HTMLDivElement>(null);
@@ -49,80 +40,6 @@ export default function AdminLoginPage() {
   const inputsRef = useRef<(HTMLDivElement | null)[]>([]);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const decorativeRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const ctx = gsap.context(() => {
-      // Container animation
-      gsap.fromTo(
-        containerRef.current,
-        { opacity: 0 },
-        { opacity: 1, duration: 0.8, ease: "power2.out" },
-      );
-
-      // Decorative circles animation
-      gsap.fromTo(
-        decorativeRef.current?.children || [],
-        { scale: 0, opacity: 0 },
-        {
-          scale: 1,
-          opacity: 0.1,
-          duration: 1.5,
-          stagger: 0.2,
-          ease: "elastic.out(1, 0.5)",
-        },
-      );
-
-      // Card animation
-      gsap.fromTo(
-        cardRef.current,
-        {
-          y: 50,
-          opacity: 0,
-          scale: 0.9,
-          rotationX: 10,
-        },
-        {
-          y: 0,
-          opacity: 1,
-          scale: 1,
-          rotationX: 0,
-          duration: 0.8,
-          delay: 0.2,
-          ease: "back.out(1.7)",
-        },
-      );
-
-      // Title animation
-      gsap.fromTo(
-        titleRef.current,
-        { y: -30, opacity: 0 },
-        { y: 0, opacity: 1, duration: 0.6, delay: 0.4, ease: "power3.out" },
-      );
-
-      // Form elements stagger animation
-      gsap.fromTo(
-        inputsRef.current.filter(Boolean),
-        { x: -30, opacity: 0 },
-        {
-          x: 0,
-          opacity: 1,
-          duration: 0.5,
-          stagger: 0.1,
-          delay: 0.6,
-          ease: "power3.out",
-        },
-      );
-
-      // Button animation
-      gsap.fromTo(
-        buttonRef.current,
-        { y: 20, opacity: 0 },
-        { y: 0, opacity: 1, duration: 0.5, delay: 1, ease: "power3.out" },
-      );
-    }, containerRef);
-
-    return () => ctx.revert();
-  }, []);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -135,29 +52,11 @@ export default function AdminLoginPage() {
       });
 
       if (result.success) {
-        // Trigger success animation
-        gsap.to(cardRef.current, {
-          scale: 1.02,
-          duration: 0.2,
-          yoyo: true,
-          repeat: 1,
-          ease: "power2.inOut",
-          onComplete: () => {
-            toast.success("Welcome back, Admin!");
-            router.refresh();
-            const targetUrl = result.redirectUrl || "/admin/dashboard";
-            router.push(targetUrl);
-          },
-        });
+        toast.success("Welcome back, Admin!");
+        router.refresh();
+        const targetUrl = result.redirectUrl || "/admin/dashboard";
+        router.push(targetUrl);
       } else {
-        // Error animation
-        gsap.to(cardRef.current, {
-          x: 10,
-          duration: 0.1,
-          yoyo: true,
-          repeat: 3,
-          ease: "power2.inOut",
-        });
         toast.error(result.error || "Invalid credentials");
       }
     } catch (error) {

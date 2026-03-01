@@ -2,10 +2,13 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
-import { getSession } from "@/lib/auth";
 import { task_status } from "@prisma/client";
 import { revalidatePath } from "next/cache";
-import { Task } from "@/schema/TaskSchema";
+import { taskSchema, Task } from "@/schema/TaskSchema";
+
+// helpers moved into middleware folder
+import { requireAuth } from "@/middleware/auth";
+import { validateRequest } from "@/middleware/validation";
 
 // ============================================================================
 // TYPE DEFINITIONS
@@ -32,20 +35,20 @@ type TaskResponse<T = unknown> =
  * @returns TaskResponse with success status and created task or error message
  */
 export async function createTask(data: Task) {
-  const user = await getSession();
-
-  if (!user) return { success: false, error: "Unauthorized" };
+  // authentication and input validation are now handled by shared middleware helpers
+  const user = await requireAuth();
+  const valid = validateRequest(taskSchema, data) as Task;
 
   try {
     const task = await prisma.task.create({
       data: {
-        title: data.title,
-        description: data.description || "",
-        status: data.status || task_status.PENDING,
-        team_id: data.team_id,
+        title: valid.title,
+        description: valid.description || "",
+        status: valid.status || task_status.PENDING,
+        team_id: valid.team_id,
         created_by_id: user.id,
-        assigned_to_id: data.assigned_to_id || null,
-        deadline: data.deadline ? new Date(data.deadline) : null,
+        assigned_to_id: valid.assigned_to_id || null,
+        deadline: valid.deadline ? new Date(valid.deadline) : null,
       },
     });
 

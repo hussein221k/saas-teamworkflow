@@ -1,19 +1,28 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
-import { getSession } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 
+import { requireAuth } from "@/middleware/auth";
+import { Message } from "@/schema/MessageSchema";
+
+type ChatResponse<T = unknown> = {
+  success: boolean;
+  message?: T;
+  messages?: T;
+  error?: string;
+};
 
 export async function sendMessage(
   team_id: string,
   content: string,
   channel_id?: string,
   receiver_id?: string,
-) {
-  const sessionUser = await getSession();
-
-  if (!sessionUser) {
+): Promise<ChatResponse<Message>> {
+  let sessionUser;
+  try {
+    sessionUser = await requireAuth();
+  } catch (err) {
     return { success: false, error: "Unauthorized" };
   }
 
@@ -47,11 +56,14 @@ export async function getTeamMessages(
   team_id: string,
   channel_id?: string,
   receiver_id?: string,
-) {
+): Promise<ChatResponse<Message[]>> {
   try {
-    const sessionUser = await getSession();
-    if (!sessionUser)
+    let sessionUser;
+    try {
+      sessionUser = await requireAuth();
+    } catch {
       return { success: false, messages: [], error: "Not authenticated" };
+    }
 
     // Build simple where clause - avoid complex typing that can cause issues
     const queryOptions: {

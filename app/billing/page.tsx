@@ -1,39 +1,30 @@
-import { getSession } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
-import PricingPageClient from "./PricingPageClient";
-import { redirect } from "next/navigation";
+// =============================================================================
+// FEATURE: Billing / Pricing — Planned upgrade. Full implementation is in
+// PricingPageClient.tsx and server/actions/billing.ts. Restore this route
+// and nav links when enabling billing. Until then, this page is hidden from
+// nav and shows a placeholder so the route does not 404.
+// =============================================================================
 
-export default async function PricingPage() {
-  const user = await getSession();
+import Link from "next/link";
 
-  // Redirect employees to dashboard - only admins can access billing
-  if (!user || user.role !== "ADMIN") {
-    return redirect("/dashboard");
-  }
-
-  const dbUser = await prisma.user.findUnique({
-    where: { id: user.id },
-    include: { team: { include: { billing: true } } },
-  });
-
-  if (!dbUser) {
-    return redirect("/dashboard");
-  }
-
-  const team = dbUser.team;
-  const billing_type = team?.billing?.plan || "FREE";
-
+export default function BillingPlaceholderPage() {
   return (
-    <PricingPageClient
-      id={dbUser.id}
-      name={dbUser.name}
-      email={dbUser.email || ""}
-      password="" // Not needed for display
-      created_at={dbUser.created_at}
-      is_billing={dbUser.is_billing}
-      billing_type={billing_type}
-      role={dbUser.role}
-      team_id={dbUser.team_id || ""}
-    />
+    <main className="min-h-screen bg-black text-white flex flex-col items-center justify-center px-6">
+      <div className="text-center max-w-md space-y-4">
+        <h1 className="text-2xl font-semibold text-zinc-100">
+          Billing &amp; Pricing
+        </h1>
+        <p className="text-zinc-400 text-sm">
+          This feature is planned for a future upgrade. Subscription and plan
+          management will be available here.
+        </p>
+        <Link
+          href="/"
+          className="inline-block text-sm text-primary hover:underline"
+        >
+          Back to home
+        </Link>
+      </div>
+    </main>
   );
 }

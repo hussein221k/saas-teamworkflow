@@ -235,13 +235,11 @@ export default function PricingPageClient({
                         No Modification Required
                       </span>
                     </div>
-                  ) : id && role == "ADMIN" ? (
-                    true
-                  ) : false && team_id ? (
+                  ) : id && role === "ADMIN" && team_id ? (
                     <div className="w-full">
                       <BillingActions
-                        team_id={team_id}
-                        currentPlan={billing_type}
+                        team_id={team_id ?? undefined}
+                        currentPlan={billing_type || "FREE"}
                       />
                     </div>
                   ) : (

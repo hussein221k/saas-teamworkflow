@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 // Local enum definition to avoid importing @prisma/client in client components
@@ -18,7 +17,6 @@ import React, {
   useRef,
   useEffect,
 } from "react";
-import { gsap } from "gsap";
 import {
   ChevronLeft,
   ChevronRight,
@@ -48,6 +46,7 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { format, isBefore } from "date-fns";
 import { useQuery } from "@tanstack/react-query";
+import { User } from "@/schema/UserSchema";
 
 interface TaskSidebarProps {
   team_id: string;
@@ -123,47 +122,6 @@ export default function TaskSidebar({
     [formData, addTask, team_id, user_id],
   );
 
-  // 🔹 Entrance Animations
-  useEffect(() => {
-    if (ui.isOpen) {
-      const tl = gsap.timeline();
-      tl.fromTo(
-        sidebarRef.current,
-        { x: "100%", opacity: 0 },
-        { x: "0%", opacity: 1, duration: 0.8, ease: "expo.out" },
-      )
-        .fromTo(
-          headerRef.current,
-          { y: -20, opacity: 0 },
-          { y: 0, opacity: 1, duration: 0.5, ease: "back.out" },
-          "-=0.4",
-        )
-        .fromTo(
-          actionRef.current,
-          { scale: 0.9, opacity: 0 },
-          { scale: 1, opacity: 1, duration: 0.4, ease: "power2.out" },
-          "-=0.3",
-        );
-    }
-  }, [ui.isOpen]);
-
-  // 🔹 Form Animation
-  useEffect(() => {
-    if (ui.isCreating && formRef.current) {
-      gsap.fromTo(
-        formRef.current,
-        { height: 0, opacity: 0, scale: 0.95 },
-        {
-          height: "auto",
-          opacity: 1,
-          scale: 1,
-          duration: 0.5,
-          ease: "expo.out",
-        },
-      );
-    }
-  }, [ui.isCreating]);
-
   const filteredTasks = useMemo(() => {
     return tasks.filter((task) => {
       if (!isAdmin && task.assigned_to_id !== user_id) return false;
@@ -171,17 +129,6 @@ export default function TaskSidebar({
       return task.status === ui.filter;
     });
   }, [tasks, isAdmin, user_id, ui.filter]);
-
-  // 🔹 List Animation
-  useEffect(() => {
-    if (listRef.current && filteredTasks.length > 0) {
-      gsap.fromTo(
-        listRef.current.children,
-        { y: 20, opacity: 0 },
-        { y: 0, opacity: 1, duration: 0.4, stagger: 0.05, ease: "power2.out" },
-      );
-    }
-  }, [filteredTasks.length, ui.filter]);
 
   const statusIcons: Record<string, React.ReactNode> = useMemo(
     () => ({
@@ -306,7 +253,7 @@ export default function TaskSidebar({
                         <SelectValue placeholder="Unit" />
                       </SelectTrigger>
                       <SelectContent>
-                        {members.map((m: any) => (
+                        {members.map((m: User) => (
                           <SelectItem key={m.id} value={m.id.toString()}>
                             {m.name}
                           </SelectItem>

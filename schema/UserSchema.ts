@@ -28,12 +28,12 @@ export const UserSchema = z.object({
   /**
    * Email - valid email format
    */
-  email: z.string().email("invalid email"),
+  email: z.string().email("invalid email").nullable(),
 
   /**
    * Team ID - optional numeric identifier
    */
-  team_id: z.string().optional(),
+  team_id: z.string().nullable().optional(),
 
   /**
    * Creation date
@@ -43,9 +43,9 @@ export const UserSchema = z.object({
   //Billing
 
   is_billing: z.boolean(),
-  billing_type: z.enum(["FREE", "PRO", "ENTERPRISE"]),
-  billing_day: z.date().optional(),
-  billing_finish: z.date().optional(),
+  billing_type: z.enum(["FREE", "PRO", "ENTERPRISE"]).nullable(),
+  billing_day: z.date().nullable().optional(),
+  billing_finish: z.date().nullable().optional(),
 });
 
 /**

@@ -19,6 +19,9 @@ export const TeamSchema = z.object({
    * Owner ID - numeric identifier for the team admin
    */
   owner_id: z.string().uuid(), //Admin User
+
+  theme_color: z.string().optional(),
+  invite_code: z.string().nullable().optional(),
 });
 
 /**

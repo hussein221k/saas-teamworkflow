@@ -71,6 +71,8 @@ model user {
   messages_sent     message[] @relation("SentMessages")
   messages_received message[] @relation("ReceivedMessages")
 
+  channel_members channel_member[]
+
   @@map("users")
 }
 
@@ -142,8 +144,9 @@ model channel {
   team_id    String
   created_at DateTime @default(now())
 
-  team     team      @relation(fields: [team_id], references: [id])
+  team     team             @relation(fields: [team_id], references: [id])
   messages message[]
+  members  channel_member[]
 
   @@map("channels")
 }
@@ -216,4 +219,17 @@ model message {
   user     user     @relation("SentMessages", fields: [user_id], references: [id])
 
   @@map("messages")
+}
+
+model channel_member {
+  id         String   @id @default(uuid())
+  channel_id String
+  user_id    String
+  created_at DateTime @default(now())
+
+  channel channel @relation(fields: [channel_id], references: [id])
+  user    user    @relation(fields: [user_id], references: [id])
+
+  @@unique([channel_id, user_id])
+  @@map("channel_members")
 }

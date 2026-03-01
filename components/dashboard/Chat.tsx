@@ -8,13 +8,20 @@ import {
   Loader2,
   User,
   Hash,
-  Search,
-  MoreVertical,
   Paperclip,
   Smile,
   Brain,
   MessageSquare,
+  X,
+  MoreVertical,
 } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
 import React, {
   useState,
   useEffect,
@@ -22,6 +29,7 @@ import React, {
   useCallback,
   useMemo,
 } from "react";
+import ChannelMembers from "./ChannelMembers";
 import Microphone from "./Microphone";
 import { sendLocalNotification } from "./NotificationManager";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -29,15 +37,17 @@ import { useChat } from "@/hooks/useChat";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/app/AuthProvider";
 import { format } from "date-fns";
 import { useSearchParams } from "next/navigation";
 
 interface ChatProps {
   team_id: string;
   currentuser_id: string;
+  isAdmin?: boolean;
 }
 
-function Chat({ team_id, currentuser_id }: ChatProps) {
+function Chat({ team_id, currentuser_id, isAdmin = false }: ChatProps) {
   const searchParams = useSearchParams();
   const channel_id = searchParams.get("channel_id");
   const receiver_id = searchParams.get("receiver_id");
@@ -47,7 +57,10 @@ function Chat({ team_id, currentuser_id }: ChatProps) {
     channel_id,
     receiver_id,
   );
+  const { logout } = useAuth();
   const [inputValue, setInputValue] = useState("");
+  const [showMembers, setShowMembers] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = useCallback(() => {
@@ -80,6 +93,18 @@ function Chat({ team_id, currentuser_id }: ChatProps) {
     },
     [handleSend],
   );
+
+  const handleSearchClick = useCallback(() => {
+    setSearchOpen(true);
+  }, []);
+
+  const handleEditClick = useCallback(() => {
+    const name = prompt("Enter new channel name:");
+    if (name && channel_id) {
+      // TODO: call server action to rename channel
+      console.log("rename channel", channel_id, name);
+    }
+  }, [channel_id]);
 
   const handleMicResult = useCallback((text: string) => {
     setInputValue((prev) => prev + " " + text);
@@ -138,8 +163,30 @@ function Chat({ team_id, currentuser_id }: ChatProps) {
 
   return (
     <div className="flex flex-col h-full w-full bg-zinc-950 border-r border-white/5 overflow-hidden">
+      {showMembers && channel_id && (
+        <ChannelMembers
+          channel_id={channel_id}
+          team_id={team_id}
+          currentuser_id={currentuser_id}
+          isAdmin={isAdmin}
+          onClose={() => setShowMembers(false)}
+        />
+      )}
       {/* Chat Header */}
       <header className="p-4 border-b border-white/10 bg-zinc-900/50 backdrop-blur-md flex items-center justify-between z-10">
+        {searchOpen && (
+          <div className="absolute inset-0 bg-black/80 flex items-center justify-center z-20">
+            <div className="bg-zinc-900 p-4 rounded flex items-center gap-2">
+              <Input
+                placeholder="Search messages..."
+                className="bg-zinc-800 text-zinc-100"
+              />
+              <Button size="icon" onClick={() => setSearchOpen(false)}>
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
+          </div>
+        )}
         <div className="flex items-center gap-3">
           <div className="bg-primary/10 p-2 rounded-xl">
             {receiver_id ? (
@@ -182,23 +229,50 @@ function Chat({ team_id, currentuser_id }: ChatProps) {
             variant="ghost"
             size="icon"
             className="h-8 w-8 text-zinc-400 hover:text-white hover:bg-white/5"
-          >
-            <Search className="w-4 h-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8 text-zinc-400 hover:text-white hover:bg-white/5"
+            onClick={() => {
+              if (channel_id) setShowMembers(true);
+            }}
           >
             <User className="w-4 h-4" />
           </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8 text-zinc-400 hover:text-white hover:bg-white/5"
-          >
-            <MoreVertical className="w-4 h-4" />
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 text-zinc-400 hover:text-white hover:bg-white/5"
+              >
+                <MoreVertical className="w-4 h-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-40">
+              <DropdownMenuItem
+                onClick={() =>
+                  window.dispatchEvent(new CustomEvent("open-chat-search"))
+                }
+              >
+                Search
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() =>
+                  window.dispatchEvent(new CustomEvent("edit-chat"))
+                }
+              >
+                Edit
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={handleSearchClick}>
+                Search
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={handleEditClick}>
+                Edit
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={logout} variant="destructive">
+                Log out
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </header>
 

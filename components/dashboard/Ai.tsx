@@ -9,7 +9,6 @@ import React, {
 } from "react";
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
-import { gsap } from "gsap";
 import {
   Brain,
   X,
@@ -23,7 +22,6 @@ import {
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-
 
 type MessageRole = "system" | "user" | "assistant";
 
@@ -68,7 +66,8 @@ function Ai() {
         setMessages([
           {
             role: "system",
-            content: "Cognitive engine online. How can I assist with your workflow data today?",
+            content:
+              "Cognitive engine online. How can I assist with your workflow data today?",
           },
         ]);
       }
@@ -100,60 +99,6 @@ function Ai() {
     mediaQuery.addEventListener("change", handleChange);
     return () => mediaQuery.removeEventListener("change", handleChange);
   }, []);
-
-  // 🔹 Neural Pulse Animation
-  useEffect(() => {
-    let ctx: gsap.Context;
-    if (brainRef.current) {
-      ctx = gsap.context(() => {
-        gsap.to(brainRef.current, {
-          scale: 1.1,
-          duration: 1.5,
-          repeat: -1,
-          yoyo: true,
-          ease: "sine.inOut",
-          filter: "drop-shadow(0 0 8px rgba(var(--primary), 0.5))",
-        });
-      });
-    }
-    return () => ctx?.revert();
-  }, [ui.mounted]);
-
-  // 🔹 Entrance Animations
-  useEffect(() => {
-    if (ui.isOpen) {
-      const tl = gsap.timeline();
-
-      tl.fromTo(
-        sidebarRef.current,
-        { x: "100%", opacity: 0 },
-        {
-          x: "0%",
-          opacity: 1,
-          duration: 0.8,
-          ease: "expo.out",
-        },
-      )
-        .fromTo(
-          headerRef.current,
-          { y: -20, opacity: 0 },
-          { y: 0, opacity: 1, duration: 0.5, ease: "back.out" },
-          "-=0.4",
-        )
-        .fromTo(
-          statsRef.current?.children || [],
-          { scale: 0.8, opacity: 0 },
-          { scale: 1, opacity: 1, duration: 0.4, stagger: 0.1, ease: "power2.out" },
-          "-=0.3",
-        )
-        .fromTo(
-          inputRef.current,
-          { y: 20, opacity: 0 },
-          { y: 0, opacity: 1, duration: 0.5, ease: "power2.out" },
-          "-=0.2",
-        );
-    }
-  }, [ui.isOpen]);
 
   const handleSend = useCallback(
     async (text?: string) => {
@@ -195,18 +140,22 @@ function Ai() {
           ui.isDesktop
             ? "h-screen border-l border-white/5 shadow-[-20px_0_50px_-15px_rgba(0,0,0,0.5)]"
             : "fixed inset-0 w-full",
-          ui.isOpen ? (ui.isDesktop ? "w-100" : "w-full") : "w-0 p-0 overflow-hidden hidden",
+          ui.isOpen
+            ? ui.isDesktop
+              ? "w-100"
+              : "w-full"
+            : "w-0 p-0 overflow-hidden hidden",
         )}
       >
         {/* AI Header */}
-        <div 
+        <div
           ref={headerRef}
           className="p-6 border-b border-white/5 bg-zinc-900/20 backdrop-blur-md flex items-center justify-between"
         >
           <div className="flex items-center gap-3">
             <div className="relative">
               <div className="absolute inset-0 bg-primary/20 blur-xl rounded-full" />
-              <div 
+              <div
                 ref={brainRef}
                 className="relative bg-zinc-900 p-2 rounded-xl border border-white/10 shadow-2xl"
               >
@@ -241,7 +190,7 @@ function Ai() {
         </div>
 
         {/* Knowledge Base Stats */}
-        <div 
+        <div
           ref={statsRef}
           className="px-6 py-4 border-b border-white/5 grid grid-cols-2 gap-3 bg-zinc-900/50"
         >
@@ -316,7 +265,7 @@ function Ai() {
         </ScrollArea>
 
         {/* Interaction Node */}
-        <div 
+        <div
           ref={inputRef}
           className="p-6 bg-zinc-900/50 border-t border-white/5"
         >

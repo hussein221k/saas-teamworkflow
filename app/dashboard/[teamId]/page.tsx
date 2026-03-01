@@ -1,18 +1,12 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import React from "react";
-import Chatsmange from "@/components/dashboard/Chatchannels";
-import Chat from "@/components/dashboard/Chat";
-import Ai from "@/components/dashboard/Ai";
-import TaskSidebar from "@/components/dashboard/Task";
-import DashboardWrapper from "@/components/dashboard/DashboardWrapper";
-import { NotificationManager } from "@/components/dashboard/NotificationManager";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import { checkSubscriptionStatus } from "@/server/actions/billing";
-import ThemeCustomizer from "@/components/dashboard/ThemeCustomizer";
-import ScrollSequence from "@/components/dashboard/ScrollSequence";
+import DashboardContent from "./_components/DashboardContent";
 
-async function page({ params }: { params: Promise<{ team_id: string }> }) {
+async function page({ params }: { params: Promise<{ teamId: string }> }) {
   // Get current user session
   const user = await getSession();
 
@@ -25,8 +19,8 @@ async function page({ params }: { params: Promise<{ team_id: string }> }) {
     return redirect("/onboarding");
   }
 
-  // Get team_id from URL params
-  const { team_id: urlTeamId } = await params;
+  // Get teamId from URL params
+  const { teamId: urlTeamId } = await params;
 
   // Explicit ID validation: Compare user's team ID with URL param
   if (urlTeamId && urlTeamId !== user.team_id) {
@@ -85,37 +79,12 @@ async function page({ params }: { params: Promise<{ team_id: string }> }) {
   }));
 
   return (
-    <DashboardWrapper>
-      <style>{`:root { --primary: ${currentTeam.theme_color || "#6366f1"}; }`}</style>
-      <NotificationManager />
-      <div className="absolute inset-0 border-20 border-black/50 pointer-events-none" />
-      <div className="absolute top-6 right-6 z-100 flex items-center gap-3">
-        <ThemeCustomizer
-          team_id={currentTeam.id}
-          currentPlan={currentPlan}
-          initialColor={currentTeam.theme_color || "#6366f1"}
-        />
-      </div>
-      <Chatsmange
-        user_id={user.id}
-        currentteam_id={user.team_id}
-        initialTeams={formattedTeams}
-        isAdmin={user.role === "ADMIN"}
-      />
-      <div className="flex flex-1 flex-col overflow-y-auto relative scrollbar-hide">
-        <ScrollSequence frameCount={5} folderPath="/frames/" />
-
-        <div className="flex flex-1 flex-row h-screen overflow-hidden relative border-t border-white/5 bg-zinc-950">
-          <Chat team_id={user.team_id} currentuser_id={user.id} />
-          <TaskSidebar
-            team_id={user.team_id}
-            user_id={user.id}
-            isAdmin={user.role === "ADMIN"}
-          />
-          <Ai />
-        </div>
-      </div>
-    </DashboardWrapper>
+    <DashboardContent
+      teamId={currentTeam.id}
+      userId={user.id}
+      userRole={user.role as "ADMIN" | "EMPLOYEE"}
+      initialTeams={formattedTeams}
+    />
   );
 }
 

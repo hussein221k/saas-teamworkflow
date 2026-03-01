@@ -1,10 +1,6 @@
 "use client";
 
 import React, { useEffect, useRef } from "react";
-import { gsap } from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
-
-gsap.registerPlugin(ScrollTrigger);
 
 interface ScrollSequenceProps {
   frameCount: number;
@@ -12,7 +8,11 @@ interface ScrollSequenceProps {
   extension?: string;
 }
 
-export default function ScrollSequence({ frameCount, folderPath, extension = "jpg" }: ScrollSequenceProps) {
+export default function ScrollSequence({
+  frameCount,
+  folderPath,
+  extension = "jpg",
+}: ScrollSequenceProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -26,19 +26,19 @@ export default function ScrollSequence({ frameCount, folderPath, extension = "jp
     const loadedImages: HTMLImageElement[] = [];
     let loadedCount = 0;
 
-    const currentFrame = (index: number) => 
-      `${folderPath}${index.toString().padStart(4, '0')}.${extension}`;
+    const currentFrame = (index: number) =>
+      `${folderPath}${index.toString().padStart(4, "0")}.${extension}`;
 
     for (let i = 1; i <= frameCount; i++) {
-        const img = new Image();
-        img.src = currentFrame(i);
-        img.onload = () => {
-            loadedCount++;
-            if (loadedCount === frameCount) {
-                render();
-            }
-        };
-        loadedImages.push(img);
+      const img = new Image();
+      img.src = currentFrame(i);
+      img.onload = () => {
+        loadedCount++;
+        if (loadedCount === frameCount) {
+          render();
+        }
+      };
+      loadedImages.push(img);
     }
 
     const sequenceState = { frame: 0 };
@@ -54,26 +54,20 @@ export default function ScrollSequence({ frameCount, folderPath, extension = "jp
         const centerShiftX = (canvas.width - img.width * ratio) / 2;
         const centerShiftY = (canvas.height - img.height * ratio) / 2;
         context.drawImage(
-          img, 
-          0, 0, img.width, img.height,
-          centerShiftX, centerShiftY, img.width * ratio, img.height * ratio
+          img,
+          0,
+          0,
+          img.width,
+          img.height,
+          centerShiftX,
+          centerShiftY,
+          img.width * ratio,
+          img.height * ratio,
         );
       }
     }
 
-    gsap.to(sequenceState, {
-      frame: frameCount - 1,
-      snap: "frame",
-      ease: "none",
-      scrollTrigger: {
-        trigger: containerRef.current,
-        start: "top top",
-        end: "+=3000",
-        scrub: 0.5,
-        pin: true,
-      },
-      onUpdate: render
-    });
+    // Animation removed - scrollTrigger functionality disabled
 
     const handleResize = () => {
       if (!canvas) return;
@@ -87,17 +81,20 @@ export default function ScrollSequence({ frameCount, folderPath, extension = "jp
 
     return () => {
       window.removeEventListener("resize", handleResize);
-      ScrollTrigger.getAll().forEach(t => t.kill());
     };
   }, [frameCount, folderPath, extension]);
 
   return (
     <div ref={containerRef} className="relative w-full h-screen bg-black z-0">
-      <canvas ref={canvasRef} className="absolute inset-0 w-full h-full object-cover" />
-      
+      <canvas
+        ref={canvasRef}
+        className="absolute inset-0 w-full h-full object-cover"
+      />
+
       <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center px-6">
         <h2 className="text-4xl md:text-7xl font-black italic tracking-tighter text-white opacity-20 uppercase">
-          Neural Architecture <br /> <span className="text-primary">Zooming Focal Point</span>
+          Neural Architecture <br />{" "}
+          <span className="text-primary">Zooming Focal Point</span>
         </h2>
         <p className="mt-4 text-zinc-500 font-bold tracking-[0.3em] uppercase text-xs opacity-50">
           Scroll to deconstruct workspace

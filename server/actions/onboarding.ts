@@ -119,6 +119,7 @@ export async function finishOnboarding(
 
 export async function adminSignup(data: {
   name: string;
+  username?: string;
   email: string;
   password: string;
   teamName: string;
@@ -131,6 +132,8 @@ export async function adminSignup(data: {
   }
 
   const { email, password, name, teamName, plan } = data;
+  // optional username provided from UI
+  const rawUsername = (data.username || "").toString();
   const is_billing = plan !== "FREE";
   const billing_type = plan;
 
@@ -158,13 +161,32 @@ export async function adminSignup(data: {
         .trim()
         .slice(0, 100);
       const sanitizedEmail = email.toLowerCase().trim();
+      const sanitizedUsername = rawUsername
+        .replace(/<[^>]*>/g, "")
+        .trim()
+        .toLowerCase()
+        .replace(/\s+/g, "")
+        .slice(0, 30);
+
+      // If no username provided, fall back to local-part of email
+      const finalUsername = sanitizedUsername || sanitizedEmail.split("@")[0];
+
+      // Ensure username uniqueness (simple pre-check)
+      const userExists = await tx.user.findFirst({
+        where: { OR: [{ email: sanitizedEmail }, { username: finalUsername }] },
+        select: { id: true },
+      });
+
+      if (userExists) {
+        throw new Error("Email or username already registered");
+      }
 
       // Create admin user
       const adminUser = await tx.user.create({
         data: {
           name: sanitizedName,
           email: sanitizedEmail,
-          username: sanitizedEmail.split("@")[0],
+          username: finalUsername,
           password: hashedPassword,
           role: role.ADMIN,
           is_billing: is_billing,
