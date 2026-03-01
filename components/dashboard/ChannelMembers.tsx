@@ -7,6 +7,13 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { X } from "lucide-react";
 
+interface MemberLike {
+  id: string;
+  name?: string | null;
+  email?: string | null;
+  username?: string | null;
+}
+
 interface ChannelMembersProps {
   channel_id: string;
   team_id: string;
@@ -36,7 +43,9 @@ export default function ChannelMembers({
   const [toAddId, setToAddId] = useState<string>("");
 
   const availableToAdd = useMemo(() => {
-    return teamMembers.filter((tm) => !members.some((m) => m.id === tm.id));
+    return teamMembers.filter((tm: MemberLike) =>
+      !members.some((m) => m.id === tm.id)
+    );
   }, [teamMembers, members]);
 
   return (
